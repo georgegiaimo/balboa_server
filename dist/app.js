@@ -17,8 +17,11 @@ require("./database.config");
 const error_middleware_1 = require("./middlewares/error.middleware");
 const notFound_middleware_1 = require("./middlewares/notFound.middleware");
 const logger_1 = require("./utils/logger");
+const jobs_1 = require("./jobs");
 class App {
-    constructor(routes, apiPrefix = '') {
+    constructor(routes, apiPrefix = '', googleService, airtableService) {
+        this.googleService = googleService;
+        this.airtableService = airtableService;
         this.app = (0, express_1.default)();
         this.env = env_1.NODE_ENV || 'development';
         this.port = env_1.PORT || 3000;
@@ -26,6 +29,11 @@ class App {
         this.initializeMiddlewares();
         this.initializeRoutes(routes, apiPrefix);
         this.initializeErrorHandling();
+        // Now this will work
+        //console.log('googleService', this.googleService);
+        //this.googleService.getAllUsersFromDirectory();
+        //this.googleService.syncGoogleData();
+        //this.airtableService.getAirtableDataProductions();
     }
     listen() {
         const server = this.app.listen(this.port, () => {
@@ -33,6 +41,7 @@ class App {
             logger_1.logger.info(`======= ENV: ${this.env} =======`);
             logger_1.logger.info(`🚀 App listening on the port ${this.port}`);
             logger_1.logger.info(`=================================`);
+            (0, jobs_1.initializeCronJobs)();
         });
         return server;
     }
@@ -40,7 +49,6 @@ class App {
         return this.app;
     }
     initializeTrustProxy() {
-        // Nginx, Heroku, Cloudflare 등 프록시 환경에서 실IP 추출을 위해 필요
         this.app.set('trust proxy', 1);
     }
     initializeMiddlewares() {
@@ -54,7 +62,7 @@ class App {
         }));
         this.app.use((0, morgan_1.default)(env_1.LOG_FORMAT || 'dev', { stream: logger_1.stream }));
         // CORS
-        const allowedOrigins = env_1.CORS_ORIGIN_LIST.length > 0 ? env_1.CORS_ORIGIN_LIST : ['http://localhost:4200', 'https://theraloom.co'];
+        const allowedOrigins = env_1.CORS_ORIGIN_LIST.length > 0 ? env_1.CORS_ORIGIN_LIST : ['http://localhost:4200'];
         this.app.use((0, cors_1.default)({
             origin: (origin, callback) => {
                 if (!origin || allowedOrigins.includes(origin)) {
@@ -77,7 +85,7 @@ class App {
                         upgradeInsecureRequests: [],
                     },
                 }
-                : false, // 개발 환경에서는 CSP 비활성화 (hot reload 등 편의)
+                : false,
             referrerPolicy: { policy: 'no-referrer' },
         }));
         this.app.use((0, compression_1.default)());

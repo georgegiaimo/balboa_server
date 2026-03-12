@@ -8,14 +8,11 @@ const fs_1 = require("fs");
 const path_1 = require("path");
 const pino_1 = __importDefault(require("pino"));
 const env_1 = require("../config/env");
-// 로그 환경 설정
 const isProd = env_1.NODE_ENV === 'production';
 const logRoot = env_1.LOG_DIR || 'logs';
 const logLevel = env_1.LOG_LEVEL || 'info';
-// 현재 런타임 위치(프로젝트 실행 디렉토리)에 logs 폴더 생성
 const projectRoot = process.cwd(); // 현재 프로세스 실행 디렉토리
 const logDir = (0, path_1.join)(projectRoot, logRoot);
-// 로그 디렉토리 생성 (에러 핸들링 포함)
 try {
     if (!(0, fs_1.existsSync)(logDir)) {
         (0, fs_1.mkdirSync)(logDir, { recursive: true });
@@ -29,15 +26,12 @@ catch (error) {
     console.error(`[Logger Init] Failed to create log directory: ${logDir}`, error);
     throw error;
 }
-// 파일 로깅용 경로
 const prodFile = (0, path_1.join)(logDir, 'app');
 const devFile = (0, path_1.join)(logDir, 'app.dev');
 const errorFile = (0, path_1.join)(logDir, 'error');
-// Pino 인스턴스
 const transport = pino_1.default.transport({
     targets: isProd
         ? [
-            // prod: 일자/용량 기반 롤링 + 30일 보관 (전체 로그)
             {
                 target: 'pino-roll',
                 level: logLevel,
@@ -48,12 +42,11 @@ const transport = pino_1.default.transport({
                     dateFormat: 'yyyy-MM-dd',
                     extension: '.log',
                     mkdir: true,
-                    symlink: true, // current.log 심볼릭 링크 생성
+                    symlink: false, // current.log 심볼릭 링크 생성
                     limit: { count: 30 }, // 30개 보관
                     // limit: { count: 30, removeOtherLogFiles: false }, // PM2/클러스터면 주의
                 },
             },
-            // prod: 에러 전용 파일 (보관 60일 등 별도 정책 가능)
             {
                 target: 'pino-roll',
                 level: 'error',
@@ -70,7 +63,6 @@ const transport = pino_1.default.transport({
             },
         ]
         : [
-            // dev: 예쁜 콘솔 출력
             {
                 target: 'pino-pretty',
                 level: logLevel,
@@ -80,7 +72,6 @@ const transport = pino_1.default.transport({
                     ignore: 'pid,hostname',
                 },
             },
-            // dev: 파일도 같이 굴리고 싶다면(선택) — 필요 없으면 이 블록을 지워도 됨
             {
                 target: 'pino-roll',
                 level: logLevel,
@@ -97,7 +88,6 @@ const transport = pino_1.default.transport({
             },
         ],
 });
-// ── Logger 인스턴스
 exports.logger = (0, pino_1.default)({
     level: logLevel,
     base: undefined,

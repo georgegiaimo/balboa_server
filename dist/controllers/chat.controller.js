@@ -34,19 +34,22 @@ let ChatController = class ChatController {
             }
         };
         this.summarizeConversation = async (req, res, next) => {
+            /*
             try {
-                const { contents } = req.body;
-                // Controller handles basic validation
-                if (!contents)
-                    return res.status(400).json({ message: 'Contents is required' });
-                // Controller calls the service
-                const result = await this.chatService.summarizeConversation(contents);
-                // Controller sends the final response
-                res.status(200).json({ data: result, message: 'success' });
+              const { contents } = req.body;
+        
+              // Controller handles basic validation
+              if (!contents) return res.status(400).json({ message: 'Contents is required' });
+        
+              // Controller calls the service
+              const result = await this.chatService.summarizeConversation(contents);
+        
+              // Controller sends the final response
+              res.status(200).json({ data: result, message: 'success' });
+            } catch (error) {
+              next(error); // Pass to global error handler
             }
-            catch (error) {
-                next(error); // Pass to global error handler
-            }
+              */
         };
     }
 };

@@ -73,20 +73,6 @@ let ChatService = class ChatService {
         });
         return response.text;
     }
-    async summarizeConversation(contents) {
-        const response = await this.client.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: contents,
-            config: {
-                // In the new SDK, it is an explicit config field
-                systemInstruction: `
-        Summarize this conversation between an theraupetic assistant and a user named John. 
-      `,
-                temperature: 0.8,
-            },
-        });
-        return response.text;
-    }
 };
 exports.ChatService = ChatService;
 exports.ChatService = ChatService = __decorate([

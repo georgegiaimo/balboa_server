@@ -5,7 +5,7 @@ import { GoogleService } from '@services/google.service';
 @injectable()
 export class GoogleController {
     constructor(@inject(GoogleService) private googleService: GoogleService) { }
-
+    /*
     public getUsersFromDirectory = async (req: Request, res: Response, next: NextFunction) => {
         try {
 
@@ -18,6 +18,6 @@ export class GoogleController {
             next(error); // Pass to global error handler
         }
     };
-
+    */
 
 }
