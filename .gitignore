@@ -1,4 +1,5 @@
 .env
 /node_modules
 /temp/*.*
-*.json
+airtable-integration-471002-dbb2e4afc3d1.json
+airtable-sync-470518-c63c95099ebd.json
