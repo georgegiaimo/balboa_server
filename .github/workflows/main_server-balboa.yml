@@ -38,7 +38,8 @@ jobs:
           name: node-app
           # We send the compiled code + the instructions for Azure
           path: |
-            dist
+            dist/
+            node_modules/
             package.json
             package-lock.json
             tsconfig.json
