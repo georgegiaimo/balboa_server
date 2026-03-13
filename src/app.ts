@@ -6,7 +6,7 @@ import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import hpp from 'hpp';
 import morgan from 'morgan';
-import { NODE_ENV, PORT, LOG_FORMAT, CREDENTIALS, CORS_ORIGIN_LIST } from '@config/env';
+import { NODE_ENV, PORT, LOG_FORMAT, CREDENTIALS } from '@config/env';
 
 import 'reflect-metadata'; // Must be first
 import './database.config';
@@ -86,8 +86,10 @@ class App {
     this.app.use(morgan(LOG_FORMAT || 'dev', { stream }));
 
     // CORS
-    const allowedOrigins =
-      CORS_ORIGIN_LIST.length > 0 ? CORS_ORIGIN_LIST : ['http://localhost:4200'];
+    const allowedOrigins = [
+      'http://localhost:4200',
+      'https://balboa-app.azurewebsites.net/'
+    ];
 
     this.app.use(
       cors({
