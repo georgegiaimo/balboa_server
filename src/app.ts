@@ -88,7 +88,7 @@ class App {
     // CORS
     const allowedOrigins = [
       'http://localhost:4200',
-      'https://balboa-app.azurewebsites.net/'
+      'https://balboa-app.azurewebsites.net'
     ];
 
     this.app.use(
