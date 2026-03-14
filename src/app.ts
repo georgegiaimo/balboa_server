@@ -45,6 +45,7 @@ class App {
     //console.log('googleService', this.googleService);
     //this.googleService.getAllUsersFromDirectory();
     //this.googleService.syncGoogleData();
+    //this.googleService.deleteDuplicateAssignments();
     //this.airtableService.getAirtableDataProductions();
   }
 

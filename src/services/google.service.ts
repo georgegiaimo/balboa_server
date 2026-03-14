@@ -544,7 +544,6 @@ export class GoogleService {
                         //find new production
                         var production = productions.find((x:any) => { return x.org_unit_path == user_gg.orgUnitPath})
 
-
                         if (production) await this.addNewProductionAssignment(production, record);
                         else console.log('org unit not found in db', user_gg.orgUnitPath);
 
@@ -632,7 +631,10 @@ export class GoogleService {
             timestamp: Date.now()
         }
 
+        
         await this.googleRepository.addHistoricalData(historical_data_object);
+        await this.deleteDuplicateAssignments();
+
 
     }
 
@@ -678,6 +680,33 @@ export class GoogleService {
 
         } while (page_token); // Keep going as long as Google gives us a nextPageToken
         return allUsers;
+    }
+
+    async deleteDuplicateAssignments(){
+        
+        //delete duplicated assignments --- temp until fixed ----
+        var assignments = await this.googleRepository.getProductionAssignments();
+
+        console.log('assignments', assignments.length);
+
+        var duplicated_assignments:any[] = [];
+        var ctr = 0;
+        assignments.forEach((x:any,i:any) => {
+            assignments.forEach((y:any, j:any) => {
+                if (x.production_id == y.production_id && x.user_id == y.user_id && j > i){
+                    ctr += 1;
+                    //console.log('same', ctr);
+                    if (duplicated_assignments.indexOf(y.production_assignment_id) == -1) 
+                        duplicated_assignments.push(y.production_assignment_id);
+                }
+            });
+        });
+
+        console.log('duplicated_assignments', duplicated_assignments.length);
+        for (let id of duplicated_assignments){
+            await this.googleRepository.deleteProductionAssignment(id);
+            console.log('deleting duplicate...')
+        }
     }
 
     async syncGoogleData(){
