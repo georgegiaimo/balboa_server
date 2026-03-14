@@ -62,7 +62,11 @@ class App {
         }));
         this.app.use((0, morgan_1.default)(env_1.LOG_FORMAT || 'dev', { stream: logger_1.stream }));
         // CORS
-        const allowedOrigins = env_1.CORS_ORIGIN_LIST.length > 0 ? env_1.CORS_ORIGIN_LIST : ['http://localhost:4200'];
+        const allowedOrigins = [
+            'http://localhost:4200',
+            'https://balboa-app.azurewebsites.net',
+            'https://askbalboa.com'
+        ];
         this.app.use((0, cors_1.default)({
             origin: (origin, callback) => {
                 if (!origin || allowedOrigins.includes(origin)) {

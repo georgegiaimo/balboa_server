@@ -26,6 +26,14 @@ let CommonService = class CommonService {
             const year = date.getFullYear();
             return `${month}-${day}-${year}`;
         };
+        this.createToken = () => {
+            var chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+            var token = '';
+            for (var i = 0; i < 16; i++) {
+                token += chars.charAt(Math.round(Math.random() * (chars.length - 1)));
+            }
+            return token;
+        };
     }
 };
 exports.CommonService = CommonService;

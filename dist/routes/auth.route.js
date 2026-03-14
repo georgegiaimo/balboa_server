@@ -16,9 +16,6 @@ exports.AuthRoute = void 0;
 const express_1 = require("express");
 const tsyringe_1 = require("tsyringe");
 const auth_controller_1 = require("../controllers/auth.controller");
-const users_dto_1 = require("../dtos/users.dto");
-const auth_middleware_1 = require("../middlewares/auth.middleware");
-const validation_middleware_1 = require("../middlewares/validation.middleware");
 let AuthRoute = class AuthRoute {
     constructor(authController) {
         this.authController = authController;
@@ -27,9 +24,10 @@ let AuthRoute = class AuthRoute {
         this.initializeRoutes();
     }
     initializeRoutes() {
-        this.router.post(`${this.path}/signup`, (0, validation_middleware_1.ValidationMiddleware)(users_dto_1.createUserSchema), this.authController.signUp);
-        this.router.post(`${this.path}/login`, (0, validation_middleware_1.ValidationMiddleware)(users_dto_1.createUserSchema), this.authController.logIn);
-        this.router.post(`${this.path}/logout`, auth_middleware_1.AuthMiddleware, this.authController.logOut);
+        this.router.post(`${this.path}/signup`, this.authController.signUp);
+        this.router.post(`${this.path}/logIn`, this.authController.logIn);
+        this.router.get(`${this.path}/getAdminFromToken`, this.authController.getAdminFromToken);
+        this.router.post(`${this.path}/resetPassword`, this.authController.resetPassword);
     }
 };
 exports.AuthRoute = AuthRoute;

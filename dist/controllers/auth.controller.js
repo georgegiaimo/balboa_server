@@ -22,14 +22,42 @@ let AuthController = class AuthController {
         this.signUp = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
             const userData = req.body;
             const signUpUserData = await this.authService.signup(userData);
-            res.status(201).json({ data: signUpUserData.toResponse(), message: 'signup' });
+            res.status(201).json({ data: signUpUserData, message: 'signup' });
         });
         this.logIn = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
             const loginData = req.body;
             const { cookie, user } = await this.authService.login(loginData);
             res.setHeader('Set-Cookie', [cookie]);
-            res.status(200).json({ data: user.toResponse(), message: 'login' });
+            res.status(200).json({ data: user, message: 'login' });
         });
+        this.getAdminFromToken = async (req, res, next) => {
+            try {
+                var token = req.query.token;
+                // Controller calls the service
+                const result = await this.authService.getAdminFromToken(token);
+                // Controller sends the final response
+                if (result)
+                    res.status(200).json({ data: result, message: 'success' });
+                else
+                    res.status(200).json({ data: result, error: 'token is invalid or expired' });
+            }
+            catch (error) {
+                next(error); // Pass to global error handler
+            }
+        };
+        this.resetPassword = async (req, res, next) => {
+            try {
+                var user_data = req.body;
+                // Controller calls the service
+                const result = await this.authService.resetPassword(user_data);
+                // Controller sends the final response
+                if (result)
+                    res.status(200).json({ data: result, message: 'success' });
+            }
+            catch (error) {
+                next(error); // Pass to global error handler
+            }
+        };
         this.logOut = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
             const userReq = req;
             const user = userReq.user;

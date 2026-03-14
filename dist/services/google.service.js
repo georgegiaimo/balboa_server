@@ -21,8 +21,25 @@ const axios_1 = __importDefault(require("axios"));
 const google_repository_1 = require("../repositories/google.repository");
 //import { ChatRepository } from '@repositories/chat.repository';
 const { JWT } = require('google-auth-library');
-const keys = require('../../airtable-integration-471002-dbb2e4afc3d1.json'); // Your downloaded JSON key
-const keys2 = require('../../airtable-sync-470518-c63c95099ebd.json'); // Your downloaded JSON key
+//const keys = require('../../airtable-integration-471002-dbb2e4afc3d1.json'); // Your downloaded JSON key
+//const keys2 = require('../../airtable-sync-470518-c63c95099ebd.json'); // Your downloaded JSON key
+// The structure of an individual User object from Google
+const encodedCreds1 = process.env.GOOGLE_KEYS_CREWTV;
+const encodedCreds2 = process.env.GOOGLE_KEYS_MOUNT22PROD;
+var keys;
+var keys2;
+if (encodedCreds1) {
+    // Turn the Base64 string back into a JSON object
+    const decodedJson1 = Buffer.from(encodedCreds1, 'base64').toString('utf-8');
+    keys = JSON.parse(decodedJson1);
+    //console.log('keys', keys);
+}
+if (encodedCreds2) {
+    // Turn the Base64 string back into a JSON object
+    const decodedJson2 = Buffer.from(encodedCreds2, 'base64').toString('utf-8');
+    keys2 = JSON.parse(decodedJson2);
+    //console.log('keys2', keys2);
+}
 let GoogleService = class GoogleService {
     constructor(googleRepository) {
         this.googleRepository = googleRepository;

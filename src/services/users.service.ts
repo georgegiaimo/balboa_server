@@ -33,7 +33,7 @@ export class UsersService {
 
     await existingUser.updateProfile(updateData);
 
-    const updated = await this.usersRepository.update(id, existingUser);
+    const updated = await this.usersRepository.updateUser(existingUser);
     if (!updated) throw new HttpException(404, 'User not found');
     return updated;
   }

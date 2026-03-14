@@ -9,8 +9,8 @@ export declare class ApisController {
     getUsers: (req: Request, res: Response, next: NextFunction) => Promise<void>;
     getDomainDetails: (req: Request, res: Response, next: NextFunction) => Promise<void>;
     getAdmins: (req: Request, res: Response, next: NextFunction) => Promise<void>;
-    addAdmin: (req: Request, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>> | undefined>;
     getAdmin: (req: Request, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>> | undefined>;
     updateAdmin: (req: Request, res: Response, next: NextFunction) => Promise<void>;
     getCoordinators: (req: Request, res: Response, next: NextFunction) => Promise<void>;
+    getCoordinatorDetails: (req: Request, res: Response, next: NextFunction) => Promise<void>;
 }

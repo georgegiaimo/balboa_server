@@ -43,7 +43,7 @@ let UsersService = class UsersService {
         if (!existingUser)
             throw new httpException_1.HttpException(404, 'User not found');
         await existingUser.updateProfile(updateData);
-        const updated = await this.usersRepository.update(id, existingUser);
+        const updated = await this.usersRepository.updateUser(existingUser);
         if (!updated)
             throw new httpException_1.HttpException(404, 'User not found');
         return updated;

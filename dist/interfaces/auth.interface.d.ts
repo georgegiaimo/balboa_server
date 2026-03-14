@@ -1,7 +1,7 @@
 import type { Request } from 'express';
 import { User } from '../entities/user.entity';
 export interface DataStoredInToken {
-    id: number | string;
+    user_id: number | string;
 }
 export interface TokenData {
     token: string;

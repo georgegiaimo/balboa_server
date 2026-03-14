@@ -32,10 +32,11 @@ let ApisRoute = class ApisRoute {
         this.router.get(`${this.path}/getDomainDetails`, this.apisController.getDomainDetails);
         this.router.get(`${this.path}/getUsers`, this.apisController.getUsers);
         this.router.get(`${this.path}/getAdmins`, this.apisController.getAdmins);
-        this.router.post(`${this.path}/addAdmin`, this.apisController.addAdmin);
+        //this.router.post(`${this.path}/addAdmin`, this.apisController.addAdmin);
         this.router.get(`${this.path}/getAdmin`, this.apisController.getAdmin);
         this.router.post(`${this.path}/updateAdmin`, this.apisController.updateAdmin);
         this.router.get(`${this.path}/getCoordinators`, this.apisController.getCoordinators);
+        this.router.get(`${this.path}/getCoordinatorDetails`, this.apisController.getCoordinatorDetails);
     }
 };
 exports.ApisRoute = ApisRoute;

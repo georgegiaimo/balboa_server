@@ -87,27 +87,29 @@ let ApisController = class ApisController {
                 next(error); // Pass to global error handler
             }
         };
-        this.addAdmin = async (req, res, next) => {
+        /*
+        public addAdmin = async (req: Request, res: Response, next: NextFunction) => {
             try {
                 const { first_name, last_name, email, role } = req.body;
+    
                 // Controller handles basic validation
-                if (!first_name)
-                    return res.status(400).json({ message: 'First name is required' });
-                else if (!last_name)
-                    return res.status(400).json({ message: 'Last name is required' });
-                else if (!email)
-                    return res.status(400).json({ message: 'Email is required' });
-                else if (!role)
-                    return res.status(400).json({ message: 'Role is required' });
+                if (!first_name) return res.status(400).json({ message: 'First name is required' });
+                else if (!last_name) return res.status(400).json({ message: 'Last name is required' });
+                else if (!email) return res.status(400).json({ message: 'Email is required' });
+                else if (!role) return res.status(400).json({ message: 'Role is required' });
+    
                 // Controller calls the service
                 const result = await this.apisService.addAdmin(first_name, last_name, email, role);
+    
                 // Controller sends the final response
-                res.status(200).json({ data: result, message: 'success' });
-            }
-            catch (error) {
+                if (result) res.status(200).json({ data: result, message: 'success' });
+                else res.status(200).json({ data: result, error: 'Email already used' });
+    
+            } catch (error) {
                 next(error); // Pass to global error handler
             }
         };
+        */
         this.getAdmin = async (req, res, next) => {
             try {
                 const admin_id = req.query.id;
@@ -140,6 +142,18 @@ let ApisController = class ApisController {
             try {
                 // Controller calls the service
                 const result = await this.apisService.getCoordinators();
+                // Controller sends the final response
+                res.status(200).json({ data: result, message: 'success' });
+            }
+            catch (error) {
+                next(error); // Pass to global error handler
+            }
+        };
+        this.getCoordinatorDetails = async (req, res, next) => {
+            try {
+                var coordinator_id = Number(req.query.id);
+                // Controller calls the service
+                const result = await this.apisService.getCoordinatorDetails(coordinator_id);
                 // Controller sends the final response
                 res.status(200).json({ data: result, message: 'success' });
             }

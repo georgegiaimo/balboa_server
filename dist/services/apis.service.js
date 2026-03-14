@@ -16,10 +16,12 @@ exports.ApisService = void 0;
 const tsyringe_1 = require("tsyringe");
 const apis_repository_1 = require("../repositories/apis.repository");
 const common_service_1 = require("./common.service");
+const sendgrid_service_1 = require("./sendgrid.service");
 let ApisService = class ApisService {
-    constructor(apisRepository, commonService) {
+    constructor(apisRepository, commonService, sendgridService) {
         this.apisRepository = apisRepository;
         this.commonService = commonService;
+        this.sendgridService = sendgridService;
     }
     async getProductions() {
         var assignments = await this.apisRepository.getProductionAssignments();
@@ -134,17 +136,29 @@ let ApisService = class ApisService {
         });
         return admins;
     }
-    async addAdmin(first_name, last_name, email, role) {
+    /*
+    public async addAdmin(first_name:string, last_name:string, email:string, role:string){
+        
+        //check that email is not already used
+        var admins = await this.apisRepository.getAdminByEmail(email);
+        if (admins.length > 0) return -1;
+        
         var object = {
             first_name,
             last_name,
             email,
             role,
             created_timestamp: Date.now()
-        };
+        }
+
+
         var admin_id = await this.apisRepository.addAdmin(object);
+        
+        await this.sendgridService.notificationOfAdminInvitation(object);
+        
         return admin_id;
     }
+    */
     async getAdmin(admin_id) {
         var admins = await this.apisRepository.getAdmin(admin_id);
         admins.forEach((x) => {
@@ -159,7 +173,30 @@ let ApisService = class ApisService {
     }
     async getCoordinators() {
         var coordinators = await this.apisRepository.getCoordinators();
+        var coordinator_assignments = await this.apisRepository.getCoordinatorAssignments();
+        var productions = await this.apisRepository.getProductions();
+        coordinators.forEach((x) => {
+            var assignments = coordinator_assignments.filter((n) => { return n.coordinator_id == x.coordinator_id; });
+            var production_ids = assignments.map((n) => { return n.production_id; });
+            var productionsx = productions.filter((n) => { return production_ids.indexOf(n.production_id) > -1; });
+            if (productionsx[0])
+                x.production = productionsx[0].name;
+        });
         return coordinators;
+    }
+    async getCoordinatorDetails(coordinator_id) {
+        var coordinatorx = await this.apisRepository.getCoordinator(coordinator_id);
+        var coordinator = coordinatorx[0];
+        var assignments = await this.apisRepository.getAssignmentsByCoordinatorId(coordinator_id);
+        assignments.forEach((x) => {
+            //get start and end dates
+            x.assignment_start_date = this.commonService.getDate(x.created_timestamp);
+            x.assignment_end_date = this.commonService.getDate(x.ended_timestamp);
+        });
+        return {
+            coordinator: coordinator,
+            assignments: assignments
+        };
     }
 };
 exports.ApisService = ApisService;
@@ -167,6 +204,8 @@ exports.ApisService = ApisService = __decorate([
     (0, tsyringe_1.injectable)(),
     __param(0, (0, tsyringe_1.inject)(apis_repository_1.ApisRepository)),
     __param(1, (0, tsyringe_1.inject)(common_service_1.CommonService)),
-    __metadata("design:paramtypes", [Object, common_service_1.CommonService])
+    __param(2, (0, tsyringe_1.inject)(sendgrid_service_1.SendGridService)),
+    __metadata("design:paramtypes", [Object, common_service_1.CommonService,
+        sendgrid_service_1.SendGridService])
 ], ApisService);
 //# sourceMappingURL=apis.service.js.map

@@ -84,7 +84,7 @@ let ApisRepository = class ApisRepository {
     }
     async getAdmins() {
         //const data = user.toPersistence();
-        const [result] = await this.db.query(`SELECT admin_id, first_name, last_name, email, role, created_timestamp, last_login FROM admins`);
+        const [result] = await this.db.query(`SELECT admin_id, first_name, last_name, email, role, created_timestamp, last_login, status FROM admins`);
         return result;
     }
     async getAdmin(admin_id) {
@@ -92,14 +92,41 @@ let ApisRepository = class ApisRepository {
         const [result] = await this.db.query(`SELECT admin_id, first_name, last_name, email, role FROM admins WHERE admin_id=${admin_id}`);
         return result;
     }
-    async addAdmin(object) {
+    /*
+    async addAdmin(object:any): Promise<any> {
         //const data = user.toPersistence();
-        const [result] = await this.db.query(`INSERT admins SET ?`, [object]);
+
+        const [result] = await this.db.query<RowDataPacket[]>(
+            `INSERT admins SET ?`,
+            [object]
+        );
+
         return result;
     }
+    */
     async updateAdmin(object) {
         //const data = user.toPersistence();
         const [result] = await this.db.query(`UPDATE admins SET ? WHERE user_id = ${object.user_id}`, [object]);
+        return result;
+    }
+    async getAdminByEmail(email) {
+        //const data = user.toPersistence();
+        const [result] = await this.db.query(`SELECT admin_id FROM admins WHERE email=${email}`);
+        return result;
+    }
+    async getCoordinator(coordinator_id) {
+        //const data = user.toPersistence();
+        const [result] = await this.db.query(`SELECT * FROM coordinators WHERE coordinator_id=${coordinator_id}`);
+        return result;
+    }
+    async getAssignmentsByCoordinatorId(coordinator_id) {
+        //const data = user.toPersistence();
+        const [result] = await this.db.query(`SELECT 
+            coordinator_assignments.status AS assignment_status,
+            productions.*
+            FROM coordinator_assignments 
+            LEFT JOIN productions ON productions.production_id=coordinator_assignments.production_id 
+            WHERE coordinator_assignments.coordinator_id=${coordinator_id}`);
         return result;
     }
 };

@@ -7,7 +7,6 @@ require("reflect-metadata");
 require("./config/env");
 const tsyringe_1 = require("tsyringe");
 const app_1 = __importDefault(require("./app"));
-const users_repository_1 = require("./repositories/users.repository");
 const auth_route_1 = require("./routes/auth.route");
 const users_route_1 = require("./routes/users.route");
 const chat_route_1 = require("./routes/chat.route");
@@ -21,7 +20,7 @@ const google_repository_1 = require("./repositories/google.repository");
 const airtable_service_1 = require("./services/airtable.service");
 const airtable_repository_1 = require("./repositories/airtable.repository");
 const database_config_1 = require("./database.config");
-tsyringe_1.container.registerInstance(users_repository_1.UsersRepository, new users_repository_1.UsersRepository());
+//container.registerInstance(UsersRepository, new UsersRepository());
 const routes = [
     tsyringe_1.container.resolve(users_route_1.UsersRoute),
     tsyringe_1.container.resolve(auth_route_1.AuthRoute),

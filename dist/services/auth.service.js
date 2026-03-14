@@ -11,25 +11,32 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthService = void 0;
 const jsonwebtoken_1 = require("jsonwebtoken");
 const tsyringe_1 = require("tsyringe");
 const env_1 = require("../config/env");
 const httpException_1 = require("../exceptions/httpException");
-const user_entity_1 = require("../entities/user.entity");
 const users_repository_1 = require("../repositories/users.repository");
+const bcrypt_1 = __importDefault(require("bcrypt"));
+const sendgrid_service_1 = require("./sendgrid.service");
+const common_service_1 = require("./common.service");
 let AuthService = class AuthService {
-    constructor(usersRepository) {
+    constructor(usersRepository, sendgridService, commonService) {
         this.usersRepository = usersRepository;
+        this.sendgridService = sendgridService;
+        this.commonService = commonService;
     }
     createToken(user) {
         if (!env_1.SECRET_KEY)
             throw new Error('SECRET_KEY is not defined');
-        if (user.id === undefined) {
-            throw new Error('User id is undefined');
+        if (user.admin_id === undefined) {
+            throw new Error('Admin id is undefined');
         }
-        const dataStoredInToken = { id: user.id };
+        const dataStoredInToken = { user_id: user.user_id };
         const expiresIn = 60 * 60; // 1h
         const token = (0, jsonwebtoken_1.sign)(dataStoredInToken, env_1.SECRET_KEY, { expiresIn });
         return { expiresIn, token };
@@ -37,38 +44,101 @@ let AuthService = class AuthService {
     createCookie(tokenData) {
         return `Authorization=${tokenData.token}; HttpOnly; Max-Age=${tokenData.expiresIn}; Path=/; SameSite=Lax;${env_1.NODE_ENV === 'production' ? ' Secure;' : ''}`;
     }
-    async signup(userData) {
-        const findUser = await this.usersRepository.findByEmail(userData.email);
-        if (findUser)
+    async signup(user_data) {
+        var userx = await this.usersRepository.findByEmail(user_data.email);
+        var user = userx[0];
+        if (user)
             throw new httpException_1.HttpException(409, `Email is already in use`);
-        // Entity 클래스의 팩토리 메서드로 생성 (모든 검증이 자동 처리됨)
-        const newUser = await user_entity_1.User.create(userData);
-        await this.usersRepository.save(newUser);
-        return newUser;
+        var token = this.commonService.createToken();
+        var hashed_password = await this.hashPassword(user_data.password);
+        //const newUser = await User.create(userData);
+        var user_object = {
+            first_name: user_data.first_name,
+            last_name: user_data.last_name,
+            email: user_data.email,
+            role: user_data.role,
+            created_timestamp: Date.now(),
+            password: hashed_password,
+            status: user_data.status,
+            password_reset_token: token,
+            password_reset_token_expiration: Date.now() + (1000 * 60 * 60 * 24 * 3)
+        };
+        var response = await this.usersRepository.save(user_object);
+        //send notification email
+        await this.sendgridService.notificationOfAdminInvitation(user_object);
+        return response;
     }
     async login(loginData) {
-        const findUser = await this.usersRepository.findByEmail(loginData.email);
-        if (!findUser)
+        var userx = await this.usersRepository.findByEmail(loginData.email);
+        var user = userx[0];
+        console.log('userx', userx);
+        if (!user)
             throw new httpException_1.HttpException(401, `Invalid email or password.`);
-        // Entity의 도메인 메서드로 패스워드 검증
-        const isPasswordMatching = await findUser.verifyPassword(loginData.password);
+        const isPasswordMatching = await this.comparePassword(loginData.password, user.password);
         if (!isPasswordMatching)
             throw new httpException_1.HttpException(401, 'Password is incorrect');
-        const tokenData = this.createToken(findUser);
+        const tokenData = this.createToken(user);
         const cookie = this.createCookie(tokenData);
-        return { cookie, user: findUser };
+        //update user last login
+        var object = {
+            admin_id: user.admin_id,
+            last_login: Date.now()
+        };
+        await this.usersRepository.updateUser(object);
+        return { cookie, user: user };
     }
     async logout(user) {
-        // 로그아웃은 실제 서비스에서는 서버에서 세션/리프레시토큰을 블랙리스트 처리 등 구현 가능
-        // 여기서는 클라이언트의 쿠키를 삭제하면 충분
         console.log(`User with email ${user.email} logged out.`);
         return;
+    }
+    async comparePassword(password, hash) {
+        try {
+            return await bcrypt_1.default.compare(password, hash);
+        }
+        catch (error) {
+            console.error('Error comparing password:', error);
+            return false;
+        }
+    }
+    ;
+    async hashPassword(password, saltRounds = 10) {
+        try {
+            // Generate a salt and hash the password in one step
+            const hashed = await bcrypt_1.default.hash(password, saltRounds);
+            return hashed;
+        }
+        catch (error) {
+            console.error('Error hashing password:', error);
+            throw new Error('Encryption failed');
+        }
+    }
+    ;
+    async getAdminFromToken(token) {
+        console.log('token = ', token);
+        var userx = await this.usersRepository.findByToken(token);
+        var user = userx[0];
+        console.log('userx', userx);
+        return user;
+    }
+    async resetPassword(data) {
+        console.log('reset password', data);
+        //save hashed password
+        var password_hashed = await this.hashPassword(data.password);
+        var object = {
+            admin_id: data.admin_id,
+            password: password_hashed
+        };
+        var response = await this.usersRepository.updateUser(object);
+        return response;
     }
 };
 exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([
     (0, tsyringe_1.injectable)(),
     __param(0, (0, tsyringe_1.inject)(users_repository_1.UsersRepository)),
-    __metadata("design:paramtypes", [Object])
+    __param(1, (0, tsyringe_1.inject)(sendgrid_service_1.SendGridService)),
+    __param(2, (0, tsyringe_1.inject)(common_service_1.CommonService)),
+    __metadata("design:paramtypes", [Object, sendgrid_service_1.SendGridService,
+        common_service_1.CommonService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

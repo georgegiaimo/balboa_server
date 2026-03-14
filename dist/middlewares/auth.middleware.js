@@ -36,7 +36,7 @@ const AuthMiddleware = async (req, res, next) => {
             return next(new httpException_1.HttpException(401, 'Authentication failed'));
         }
         const userRepo = tsyringe_1.container.resolve(users_repository_1.UsersRepository);
-        const findUser = await userRepo.findById(String(payload.id));
+        const findUser = await userRepo.findById(String(payload.user_id));
         if (!findUser)
             return next(new httpException_1.HttpException(401, 'User not found with this token'));
         req.user = findUser;
