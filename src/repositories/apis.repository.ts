@@ -10,7 +10,9 @@ export interface IApisRepository {
     getProductionAssignments(): Promise<any>;
 
     getCoordinators(): Promise<any>;
+    getCoordinator(coordinator_id:number): Promise<any>;
     getCoordinatorAssignments(): Promise<any>;
+    getAssignmentsByCoordinatorId(coordinator_id:number): Promise<any>;
 
     getProductionCoordinators(production_id:number): Promise<any>;
     getProductionUsers(production_id:number): Promise<any>;
@@ -20,9 +22,10 @@ export interface IApisRepository {
     getUserAssignments(user_id:number): Promise<any>;
 
     getAdmins(): Promise<any>;
-    addAdmin(admin:any): Promise<any>;
+    //addAdmin(admin:any): Promise<any>;
     updateAdmin(admin:any): Promise<any>;
     getAdmin(admin_id:number): Promise<any>;
+    getAdminByEmail(email:string): Promise<any>;
 
     //addProduction(object: any): Promise<any>;
     //updateProduction(object: any): Promise<any>;
@@ -157,7 +160,7 @@ export class ApisRepository implements IApisRepository {
         //const data = user.toPersistence();
 
         const [result] = await this.db.query<RowDataPacket[]>(
-            `SELECT admin_id, first_name, last_name, email, role, created_timestamp, last_login FROM admins`
+            `SELECT admin_id, first_name, last_name, email, role, created_timestamp, last_login, status FROM admins`
         );
 
         return result;
@@ -173,6 +176,7 @@ export class ApisRepository implements IApisRepository {
         return result;
     }
 
+    /*
     async addAdmin(object:any): Promise<any> {
         //const data = user.toPersistence();
 
@@ -183,13 +187,48 @@ export class ApisRepository implements IApisRepository {
 
         return result;
     }
-
+    */
     async updateAdmin(object:any): Promise<any> {
         //const data = user.toPersistence();
 
         const [result] = await this.db.query<RowDataPacket[]>(
             `UPDATE admins SET ? WHERE user_id = ${object.user_id}`,
             [object]
+        );
+
+        return result;
+    }
+
+    async getAdminByEmail(email:string): Promise<any> {
+        //const data = user.toPersistence();
+
+        const [result] = await this.db.query<RowDataPacket[]>(
+            `SELECT admin_id FROM admins WHERE email=${email}`
+        );
+
+        return result;
+    }
+
+    async getCoordinator(coordinator_id:number): Promise<any> {
+        //const data = user.toPersistence();
+
+        const [result] = await this.db.query<RowDataPacket[]>(
+            `SELECT * FROM coordinators WHERE coordinator_id=${coordinator_id}`
+        );
+
+        return result;
+    }
+
+    async getAssignmentsByCoordinatorId(coordinator_id:number): Promise<any> {
+        //const data = user.toPersistence();
+
+        const [result] = await this.db.query<RowDataPacket[]>(
+            `SELECT 
+            coordinator_assignments.status AS assignment_status,
+            productions.*
+            FROM coordinator_assignments 
+            LEFT JOIN productions ON productions.production_id=coordinator_assignments.production_id 
+            WHERE coordinator_assignments.coordinator_id=${coordinator_id}`
         );
 
         return result;

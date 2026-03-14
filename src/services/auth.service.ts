@@ -6,62 +6,153 @@ import { DataStoredInToken, TokenData } from '@interfaces/auth.interface';
 import { User, type UserCreateData } from '@entities/user.entity';
 import { UsersRepository } from '@repositories/users.repository';
 import type { IUsersRepository } from '@repositories/users.repository';
+import bcrypt from 'bcrypt';
+import { SendGridService } from './sendgrid.service';
+import { CommonService } from './common.service';
 
 @injectable()
 export class AuthService {
-  constructor(@inject(UsersRepository) private usersRepository: IUsersRepository) {}
+  constructor(
+    @inject(UsersRepository) private usersRepository: IUsersRepository,
+    @inject(SendGridService) public sendgridService: SendGridService,
+    @inject(CommonService) public commonService: CommonService
+  ) { }
 
-  private createToken(user: User): TokenData {
+  private createToken(user: any): TokenData {
+
     if (!SECRET_KEY) throw new Error('SECRET_KEY is not defined');
 
-    if (user.id === undefined) {
-      throw new Error('User id is undefined');
+    if (user.admin_id === undefined) {
+      throw new Error('Admin id is undefined');
     }
 
-    const dataStoredInToken: DataStoredInToken = { id: user.id };
+    const dataStoredInToken: DataStoredInToken = { user_id: user.user_id };
     const expiresIn = 60 * 60; // 1h
     const token = sign(dataStoredInToken, SECRET_KEY as string, { expiresIn });
     return { expiresIn, token };
   }
 
   private createCookie(tokenData: TokenData): string {
-    return `Authorization=${tokenData.token}; HttpOnly; Max-Age=${
-      tokenData.expiresIn
-    }; Path=/; SameSite=Lax;${NODE_ENV === 'production' ? ' Secure;' : ''}`;
+    return `Authorization=${tokenData.token}; HttpOnly; Max-Age=${tokenData.expiresIn
+      }; Path=/; SameSite=Lax;${NODE_ENV === 'production' ? ' Secure;' : ''}`;
   }
 
-  public async signup(userData: UserCreateData): Promise<User> {
-    const findUser = await this.usersRepository.findByEmail(userData.email);
-    if (findUser) throw new HttpException(409, `Email is already in use`);
+  public async signup(user_data: any): Promise<User> {
 
-    // Entity 클래스의 팩토리 메서드로 생성 (모든 검증이 자동 처리됨)
-    const newUser = await User.create(userData);
-    await this.usersRepository.save(newUser);
-    return newUser;
+    var userx = await this.usersRepository.findByEmail(user_data.email) as any;
+    var user = userx[0];
+
+    if (user) throw new HttpException(409, `Email is already in use`);
+
+    var token = this.commonService.createToken();
+
+    var hashed_password = await this.hashPassword(user_data.password);
+
+    //const newUser = await User.create(userData);
+    var user_object = {
+      first_name: user_data.first_name,
+      last_name: user_data.last_name,
+      email: user_data.email,
+      role: user_data.role,
+      created_timestamp: Date.now(),
+      password: hashed_password,
+      status: user_data.status,
+      password_reset_token: token,
+      password_reset_token_expiration: Date.now() + (1000 * 60 * 60 * 24 * 3)
+    }
+
+    var response = await this.usersRepository.save(user_object);
+
+    //send notification email
+    await this.sendgridService.notificationOfAdminInvitation(user_object);
+
+    return response;
   }
 
   public async login(loginData: {
     email: string;
     password: string;
   }): Promise<{ cookie: string; user: User }> {
-    const findUser = await this.usersRepository.findByEmail(loginData.email);
-    if (!findUser) throw new HttpException(401, `Invalid email or password.`);
 
-    // Entity의 도메인 메서드로 패스워드 검증
-    const isPasswordMatching = await findUser.verifyPassword(loginData.password);
+    var userx = await this.usersRepository.findByEmail(loginData.email) as any;
+    var user = userx[0];
+
+    console.log('userx', userx);
+
+    if (!user) throw new HttpException(401, `Invalid email or password.`);
+
+    const isPasswordMatching = await this.comparePassword(loginData.password, user.password);
+
     if (!isPasswordMatching) throw new HttpException(401, 'Password is incorrect');
 
-    const tokenData = this.createToken(findUser);
+    const tokenData = this.createToken(user);
     const cookie = this.createCookie(tokenData);
 
-    return { cookie, user: findUser };
+    //update user last login
+    var object = {
+      admin_id: user.admin_id,
+      last_login: Date.now()
+    };
+
+    await this.usersRepository.updateUser(object);
+
+    return { cookie, user: user };
   }
 
-  public async logout(user: User): Promise<void> {
-    // 로그아웃은 실제 서비스에서는 서버에서 세션/리프레시토큰을 블랙리스트 처리 등 구현 가능
-    // 여기서는 클라이언트의 쿠키를 삭제하면 충분
+  public async logout(user: any): Promise<void> {
     console.log(`User with email ${user.email} logged out.`);
 
     return;
   }
+
+  public async comparePassword(password: string, hash: string) {
+    try {
+      return await bcrypt.compare(password, hash);
+    } catch (error) {
+      console.error('Error comparing password:', error);
+      return false;
+    }
+  };
+
+  public async hashPassword(password: string, saltRounds: number = 10) {
+  try {
+    // Generate a salt and hash the password in one step
+    const hashed = await bcrypt.hash(password, saltRounds);
+    return hashed;
+  } catch (error) {
+    console.error('Error hashing password:', error);
+    throw new Error('Encryption failed');
+  }
+};
+
+public async getAdminFromToken(token:string){
+
+  console.log('token = ', token);
+
+  var userx = await this.usersRepository.findByToken(token);
+  var user = userx[0];
+
+  console.log('userx', userx);
+
+  return user;
+
+}
+
+public async resetPassword(data:any){
+
+  console.log('reset password', data);
+  
+  //save hashed password
+  var password_hashed = await this.hashPassword(data.password);
+  
+  var object = {
+    admin_id: data.admin_id,
+    password: password_hashed
+  }
+
+  var response = await this.usersRepository.updateUser(object);
+  return response;
+
+}
+
 }

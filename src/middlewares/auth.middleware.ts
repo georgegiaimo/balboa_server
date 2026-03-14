@@ -37,7 +37,7 @@ export const AuthMiddleware = async (req: Request, res: Response, next: NextFunc
     }
 
     const userRepo = container.resolve(UsersRepository);
-    const findUser = await userRepo.findById(String(payload.id));
+    const findUser = await userRepo.findById(String(payload.user_id));
     if (!findUser) return next(new HttpException(401, 'User not found with this token'));
 
     (req as RequestWithUser).user = findUser;

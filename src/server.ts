@@ -18,7 +18,7 @@ import { AirtableService } from '@services/airtable.service';
 import { AirtableRepository, type IAirtableRepository } from '@repositories/airtable.repository';
 import { pool } from './database.config';
 
-container.registerInstance(UsersRepository, new UsersRepository());
+//container.registerInstance(UsersRepository, new UsersRepository());
 
 const routes = [
   container.resolve(UsersRoute), 

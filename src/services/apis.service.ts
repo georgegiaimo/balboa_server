@@ -2,13 +2,18 @@ import { injectable, inject, delay } from 'tsyringe';
 import { ApisRepository, IApisRepository } from '@/repositories/apis.repository';
 import { all } from 'axios';
 import { CommonService } from './common.service';
+import { SendGridService } from './sendgrid.service';
+import { Send } from 'express';
 
 
 @injectable()
 export class ApisService {
 
-    constructor(@inject(ApisRepository) private apisRepository: IApisRepository,
-    @inject(CommonService) public commonService: CommonService) { }
+    constructor(
+        @inject(ApisRepository) private apisRepository: IApisRepository,
+        @inject(CommonService) public commonService: CommonService,
+        @inject(SendGridService) public sendgridService: SendGridService
+    ) { }
 
     public async getProductions() {
         var assignments = await this.apisRepository.getProductionAssignments();
@@ -165,8 +170,13 @@ export class ApisService {
         return admins;
     }
 
+    /*
     public async addAdmin(first_name:string, last_name:string, email:string, role:string){
-
+        
+        //check that email is not already used
+        var admins = await this.apisRepository.getAdminByEmail(email);
+        if (admins.length > 0) return -1;
+        
         var object = {
             first_name, 
             last_name, 
@@ -175,10 +185,14 @@ export class ApisService {
             created_timestamp: Date.now()
         }
 
+
         var admin_id = await this.apisRepository.addAdmin(object);
+        
+        await this.sendgridService.notificationOfAdminInvitation(object);
+        
         return admin_id;
     }
-
+    */
     public async getAdmin(admin_id:number){
 
         var admins = await this.apisRepository.getAdmin(admin_id);
@@ -199,8 +213,37 @@ export class ApisService {
 
     public async getCoordinators(){
 
-        var coordinators = await this.apisRepository.getCoordinators();      
+        var coordinators = await this.apisRepository.getCoordinators();
+        var coordinator_assignments = await this.apisRepository.getCoordinatorAssignments();
+        var productions = await this.apisRepository.getProductions();
+
+        coordinators.forEach((x:any) => {
+            var assignments = coordinator_assignments.filter((n:any) => { return n.coordinator_id == x.coordinator_id});
+            var production_ids = assignments.map((n:any) => { return n.production_id});
+            var productionsx = productions.filter((n:any) => { return production_ids.indexOf(n.production_id) > -1});
+            
+            if (productionsx[0]) x.production = productionsx[0].name;
+        })
+              
         return coordinators;
+    }
+
+    public async getCoordinatorDetails(coordinator_id:number){
+        var coordinatorx = await this.apisRepository.getCoordinator(coordinator_id);
+        var coordinator = coordinatorx[0];
+        var assignments = await this.apisRepository.getAssignmentsByCoordinatorId(coordinator_id);
+
+        assignments.forEach((x:any) => {
+            //get start and end dates
+            x.assignment_start_date = this.commonService.getDate(x.created_timestamp);
+            x.assignment_end_date = this.commonService.getDate(x.ended_timestamp);
+        });
+
+        return {
+            coordinator: coordinator,
+            assignments: assignments
+        }
+
     }
     
 }

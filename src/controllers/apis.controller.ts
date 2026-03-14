@@ -88,6 +88,7 @@ export class ApisController {
         }
     };
 
+    /*
     public addAdmin = async (req: Request, res: Response, next: NextFunction) => {
         try {
             const { first_name, last_name, email, role } = req.body;
@@ -102,11 +103,14 @@ export class ApisController {
             const result = await this.apisService.addAdmin(first_name, last_name, email, role);
 
             // Controller sends the final response
-            res.status(200).json({ data: result, message: 'success' });
+            if (result) res.status(200).json({ data: result, message: 'success' });
+            else res.status(200).json({ data: result, error: 'Email already used' });
+
         } catch (error) {
             next(error); // Pass to global error handler
         }
     };
+    */
 
     public getAdmin = async (req: Request, res: Response, next: NextFunction) => {
         try {
@@ -147,6 +151,20 @@ export class ApisController {
 
             // Controller calls the service
             const result = await this.apisService.getCoordinators();
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
+    public getCoordinatorDetails = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+
+            var coordinator_id = Number(req.query.id); 
+            // Controller calls the service
+            const result = await this.apisService.getCoordinatorDetails(coordinator_id);
 
             // Controller sends the final response
             res.status(200).json({ data: result, message: 'success' });
