@@ -29,4 +29,20 @@ export declare class ApisService {
         coordinator: any;
         assignments: any;
     }>;
+    getHealth(): Promise<{
+        duplicated_users_by_name: number;
+        duplicated_users_by_email: number;
+        unassigned_users: number;
+        inactive_users: number;
+        approaching_one_year: number;
+    }>;
+    getDuplicatedUsersByEmail(): Promise<any[]>;
+    getDuplicatedUsersByName(): Promise<any[]>;
+    getUnassignedUsers(): Promise<any>;
+    getInactiveUsers(): Promise<any>;
+    getSimilarByEmail(): Promise<any[]>;
+    getSimilarByName(): Promise<any[]>;
+    getApproachingOneYear(): Promise<any>;
+    getLevenshteinDistance(a: string, b: string): number;
+    getSimilarity(str1: string, str2: string, threshold?: number): number;
 }

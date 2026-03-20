@@ -45,7 +45,6 @@ export class AuthService {
     if (user) throw new HttpException(409, `Email is already in use`);
 
     var token = this.commonService.createToken();
-
     var hashed_password = await this.hashPassword(user_data.password);
 
     //const newUser = await User.create(userData);
@@ -153,6 +152,32 @@ public async resetPassword(data:any){
   var response = await this.usersRepository.updateUser(object);
   return response;
 
+}
+
+public async sendResetLink(data:any){
+  var email = data.email;
+  var userx = await this.usersRepository.findByEmail(email) as any;
+  var user = userx[0];
+
+  if(user){
+
+    var token = this.commonService.createToken();
+    var expiration_date = Date.now() + (1000 * 60 * 60 * 24 * 3);
+
+    //update user
+    var user_object = {
+      admin_id: user.admin_id,
+      email: user.email,
+      password_reset_token: token,
+      password_reset_token_expiration: expiration_date
+    }
+
+    await this.usersRepository.updateUser(user_object);
+    await this.sendgridService.resetPassword(user_object);
+
+    return true;
+  }
+  
 }
 
 }

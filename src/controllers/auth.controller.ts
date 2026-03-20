@@ -57,6 +57,22 @@ export class AuthController {
         }
   }
 
+  public sendResetLink = async (req: Request, res: Response, next: NextFunction) => {
+     try {
+
+            var user_data = req.body;         
+
+            // Controller calls the service
+            const result = await this.authService.sendResetLink(user_data);
+
+            // Controller sends the final response
+            if (result) res.status(200).json({ data: result, message: 'success' });
+           
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+  }
+
  
 
   public logOut = asyncHandler(async (req: Request, res: Response) => {

@@ -198,6 +198,340 @@ let ApisService = class ApisService {
             assignments: assignments
         };
     }
+    async getHealth() {
+        //console.log('started....');
+        var t0 = Date.now();
+        var users = await this.apisRepository.getUsers();
+        var production_assignments = await this.apisRepository.getProductionAssignments();
+        //check duplicated by email
+        var duplicated_users_by_email_counter = 0;
+        users.forEach((x, i) => {
+            users.forEach((y, j) => {
+                if (x.personal_email == y.personal_email && j > i) {
+                    duplicated_users_by_email_counter += 1;
+                    //console.log('---------duplicates by email!',x,y, ctr);
+                }
+            });
+        });
+        //check duplicated by email
+        var duplicated_users_by_name_counter = 0;
+        users.forEach((x, i) => {
+            users.forEach((y, j) => {
+                if (x.first_name == y.first_name && x.last_name == y.last_name && j > i) {
+                    duplicated_users_by_name_counter += 1;
+                    //console.log('---------duplicates by email!',x,y, ctr);
+                }
+            });
+        });
+        //console.log('e1', Date.now() - t0);
+        //get unassigned users
+        var unassigned_users_counter = 0;
+        users.forEach((x) => {
+            var assignments = production_assignments.filter((n) => { return n.user_id == x.user_id; });
+            if (assignments.length == 0)
+                unassigned_users_counter += 1;
+            else {
+                var active_assignment = assignments.find((n) => { return n.status == 'active'; });
+                if (!active_assignment)
+                    unassigned_users_counter += 1;
+            }
+        });
+        //get unassigned users
+        var inactive_users_counter = 0;
+        users.forEach((x) => {
+            if (x.last_login_time) {
+                if (x.last_login_time < (Date.now() - (1000 * 60 * 60 * 24 * 365))) {
+                    inactive_users_counter += 1;
+                }
+            }
+        });
+        //get unassigned users
+        var approaching_one_year_counter = 0;
+        users.forEach((x) => {
+            if (!x.creation_time)
+                return false;
+            var one_year_mark = x.creation_time + (1000 * 60 * 60 * 24 * 400);
+            var one_year_minus_two_months = x.creation_time + (1000 * 60 * 60 * 24 * 300);
+            var now = Date.now();
+            if (now >= one_year_minus_two_months && now <= one_year_mark)
+                approaching_one_year_counter += 1;
+        });
+        /*
+        //get similar users by email
+        var similar_by_email_counter = 0;
+        users.forEach((x:any, i:number) => {
+            users.forEach((y:any, j:number) => {
+                if (j > i){
+                    var similarity = this.getSimilarity(x.personal_email, y.personal_email);
+                    if (similarity > 0.9 && similarity < 1.0) similar_by_email_counter += 1;
+                    //console.log('---------duplicates by email!',x,y, ctr);
+                }
+            });
+        });
+
+         //get similar users by email
+        var similar_by_name_counter = 0;
+        users.forEach((x:any, i:number) => {
+            users.forEach((y:any, j:number) => {
+                if (j > i){
+                    var similarity = this.getSimilarity((x.first_name + ' ' + x.last_name), (y.first_name + ' ' + y.last_name));
+                    if (similarity > 0.9 && similarity < 1.0) similar_by_name_counter += 1;
+                    //console.log('---------duplicates by email!',x,y, ctr);
+                }
+            });
+        });
+        */
+        //console.log('e3', Date.now() - t0);
+        return {
+            duplicated_users_by_name: duplicated_users_by_name_counter,
+            duplicated_users_by_email: duplicated_users_by_email_counter,
+            unassigned_users: unassigned_users_counter,
+            inactive_users: inactive_users_counter,
+            approaching_one_year: approaching_one_year_counter,
+            //similar_by_name: similar_by_email_counter
+        };
+    }
+    async getDuplicatedUsersByEmail() {
+        var users = await this.apisRepository.getUsers();
+        var production_assignments = await this.apisRepository.getProductionAssignments();
+        var productions = await this.apisRepository.getProductions();
+        //check duplicated by email
+        var duplicated_users = [];
+        users.forEach((x, i) => {
+            users.forEach((y, j) => {
+                if (x.personal_email == y.personal_email && j > i) {
+                    var user1 = x;
+                    var user1_productions = production_assignments.filter((n) => { return n.user_id == x.user_id; });
+                    user1_productions.forEach((n) => {
+                        var productionx = productions.find((s) => { return n.production_id == s.production_id; });
+                        if (productionx)
+                            n.name = productionx.name;
+                    });
+                    user1.assignments = user1_productions;
+                    var user2 = y;
+                    var user2_productions = production_assignments.filter((n) => { return n.user_id == y.user_id; });
+                    user2_productions.forEach((n) => {
+                        var productionx = productions.find((s) => { return n.production_id == s.production_id; });
+                        if (productionx)
+                            n.name = productionx.name;
+                    });
+                    user2.assignments = user2_productions;
+                    duplicated_users.push({
+                        user1: user1,
+                        user2: user2
+                    });
+                }
+            });
+        });
+        return duplicated_users;
+    }
+    async getDuplicatedUsersByName() {
+        var users = await this.apisRepository.getUsers();
+        var production_assignments = await this.apisRepository.getProductionAssignments();
+        var productions = await this.apisRepository.getProductions();
+        //check duplicated by email
+        var duplicated_users = [];
+        users.forEach((x, i) => {
+            users.forEach((y, j) => {
+                if (x.first_name == y.first_name && x.last_name == y.last_name && j > i) {
+                    var user1 = x;
+                    var user1_productions = production_assignments.filter((n) => { return n.user_id == x.user_id; });
+                    user1_productions.forEach((n) => {
+                        var productionx = productions.find((s) => { return n.production_id == s.production_id; });
+                        if (productionx)
+                            n.name = productionx.name;
+                    });
+                    user1.assignments = user1_productions;
+                    var user2 = y;
+                    var user2_productions = production_assignments.filter((n) => { return n.user_id == y.user_id; });
+                    user2_productions.forEach((n) => {
+                        var productionx = productions.find((s) => { return n.production_id == s.production_id; });
+                        if (productionx)
+                            n.name = productionx.name;
+                    });
+                    user2.assignments = user2_productions;
+                    duplicated_users.push({
+                        user1: user1,
+                        user2: user2
+                    });
+                }
+            });
+        });
+        return duplicated_users;
+    }
+    async getUnassignedUsers() {
+        var users = await this.apisRepository.getUsers();
+        var production_assignments = await this.apisRepository.getProductionAssignments();
+        users.forEach((x) => {
+            x.assignments = production_assignments.filter((n) => { return n.user_id == x.user_id; }).length;
+        });
+        var unassigned_users = users.filter((x) => { return x.assignments == 0; });
+        unassigned_users.forEach((x) => {
+            x.name = x.first_name + ' ' + x.last_name;
+            x.last_login_date = this.commonService.getDate(x.last_login_time);
+        });
+        return unassigned_users;
+    }
+    async getInactiveUsers() {
+        var users = await this.apisRepository.getUsers();
+        var production_assignments = await this.apisRepository.getProductionAssignments();
+        var productions = await this.apisRepository.getProductions();
+        //get unassigned users
+        var inactive_users = users.filter((x) => {
+            if (x.last_login_time) {
+                if (x.last_login_time < (Date.now() - (1000 * 60 * 60 * 24 * 365)))
+                    return true;
+            }
+            else
+                return false;
+        });
+        inactive_users.forEach((x) => {
+            var assignment = production_assignments.find((n) => { return n.user_id == x.user_id && n.status == 'active'; });
+            if (assignment) {
+                var production = productions.find((n) => { return n.production_id == assignment.production_id; });
+                if (production)
+                    x.assignment_name = production.name;
+            }
+        });
+        inactive_users.forEach((x) => {
+            x.name = x.first_name + ' ' + x.last_name;
+            x.last_login_date = this.commonService.getDate(x.last_login_time);
+        });
+        return inactive_users;
+    }
+    async getSimilarByEmail() {
+        var users = await this.apisRepository.getUsers();
+        var production_assignments = await this.apisRepository.getProductionAssignments();
+        var productions = await this.apisRepository.getProductions();
+        //check duplicated by email
+        var similar_users = [];
+        users.forEach((x, i) => {
+            users.forEach((y, j) => {
+                if (j > i) {
+                    var similarity = this.getSimilarity(x.personal_email, y.personal_email);
+                    if (similarity > 0.9 && similarity < 1.0) {
+                        var user1 = x;
+                        var user1_productions = production_assignments.filter((n) => { return n.user_id == x.user_id; });
+                        user1_productions.forEach((n) => {
+                            var productionx = productions.find((s) => { return n.production_id == s.production_id; });
+                            if (productionx)
+                                n.name = productionx.name;
+                        });
+                        user1.assignments = user1_productions;
+                        var user2 = y;
+                        var user2_productions = production_assignments.filter((n) => { return n.user_id == y.user_id; });
+                        user2_productions.forEach((n) => {
+                            var productionx = productions.find((s) => { return n.production_id == s.production_id; });
+                            if (productionx)
+                                n.name = productionx.name;
+                        });
+                        user2.assignments = user2_productions;
+                        similar_users.push({
+                            user1: user1,
+                            user2: user2
+                        });
+                    }
+                }
+            });
+        });
+        return similar_users;
+    }
+    async getSimilarByName() {
+        var users = await this.apisRepository.getUsers();
+        var production_assignments = await this.apisRepository.getProductionAssignments();
+        var productions = await this.apisRepository.getProductions();
+        //check duplicated by email
+        var similar_users = [];
+        users.forEach((x, i) => {
+            users.forEach((y, j) => {
+                if (j > i) {
+                    //var similarity = this.getSimilarity(x.personal_email, y.personal_email);
+                    var similarity = this.getSimilarity((x.first_name + ' ' + x.last_name), (y.first_name + ' ' + y.last_name));
+                    if (similarity > 0.9 && similarity < 1.0) {
+                        var user1 = x;
+                        var user1_productions = production_assignments.filter((n) => { return n.user_id == x.user_id; });
+                        user1_productions.forEach((n) => {
+                            var productionx = productions.find((s) => { return n.production_id == s.production_id; });
+                            if (productionx)
+                                n.name = productionx.name;
+                        });
+                        user1.assignments = user1_productions;
+                        var user2 = y;
+                        var user2_productions = production_assignments.filter((n) => { return n.user_id == y.user_id; });
+                        user2_productions.forEach((n) => {
+                            var productionx = productions.find((s) => { return n.production_id == s.production_id; });
+                            if (productionx)
+                                n.name = productionx.name;
+                        });
+                        user2.assignments = user2_productions;
+                        similar_users.push({
+                            user1: user1,
+                            user2: user2
+                        });
+                    }
+                }
+            });
+        });
+        return similar_users;
+    }
+    async getApproachingOneYear() {
+        var users = await this.apisRepository.getUsers();
+        var production_assignments = await this.apisRepository.getProductionAssignments();
+        var productions = await this.apisRepository.getProductions();
+        var users_approaching_one_year = users.filter((x) => {
+            //return users that between 10 and 12 months
+            if (!x.creation_time)
+                return false;
+            var one_year_mark = x.creation_time + (1000 * 60 * 60 * 24 * 400);
+            var one_year_minus_two_months = x.creation_time + (1000 * 60 * 60 * 24 * 300);
+            var now = Date.now();
+            if (now >= one_year_minus_two_months && now <= one_year_mark)
+                return true;
+            else
+                return false;
+        });
+        users_approaching_one_year.forEach((x) => {
+            var assignment = production_assignments.find((n) => { return n.user_id == x.user_id && n.status == 'active'; });
+            if (assignment) {
+                var production = productions.find((n) => { return n.production_id == assignment.production_id; });
+                if (production)
+                    x.assignment_name = production.name;
+            }
+        });
+        users_approaching_one_year.forEach((x) => {
+            x.name = x.first_name + ' ' + x.last_name;
+            x.last_login_date = this.commonService.getDate(x.last_login_time);
+            x.creation_date = this.commonService.getDate(x.creation_time);
+            var one_year_mark = x.creation_time + (1000 * 60 * 60 * 24 * 365);
+            x.days_to_one_year = Math.round((one_year_mark - Date.now()) / (1000 * 60 * 60 * 24));
+        });
+        users_approaching_one_year = users_approaching_one_year.sort((a, b) => { return a.days_to_one_year - b.days_to_one_year; });
+        return users_approaching_one_year;
+    }
+    getLevenshteinDistance(a, b) {
+        const matrix = Array.from({ length: b.length + 1 }, (_, i) => [i]);
+        for (let j = 0; j <= a.length; j++)
+            matrix[0][j] = j;
+        for (let i = 1; i <= b.length; i++) {
+            for (let j = 1; j <= a.length; j++) {
+                matrix[i][j] = b[i - 1] === a[j - 1]
+                    ? matrix[i - 1][j - 1]
+                    : Math.min(matrix[i - 1][j - 1], matrix[i][j - 1], matrix[i - 1][j]) + 1;
+            }
+        }
+        return matrix[b.length][a.length];
+    }
+    getSimilarity(str1, str2, threshold = 0.8) {
+        const s1 = str1.toLowerCase().trim();
+        const s2 = str2.toLowerCase().trim();
+        if (s1 === s2)
+            return 1; // Exact match
+        const distance = this.getLevenshteinDistance(s1, s2);
+        const maxLength = Math.max(s1.length, s2.length);
+        // Calculate similarity: 1 - (distance / total length)
+        const similarity = 1 - (distance / maxLength);
+        return similarity; //>= threshold;
+    }
 };
 exports.ApisService = ApisService;
 exports.ApisService = ApisService = __decorate([

@@ -33,6 +33,7 @@ class App {
         //console.log('googleService', this.googleService);
         //this.googleService.getAllUsersFromDirectory();
         //this.googleService.syncGoogleData();
+        //this.googleService.temp();
         //this.airtableService.getAirtableDataProductions();
     }
     listen() {

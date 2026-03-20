@@ -27,5 +27,13 @@ export class ApisRoute implements Routes {
     this.router.post(`${this.path}/updateAdmin`, this.apisController.updateAdmin);
     this.router.get(`${this.path}/getCoordinators`, this.apisController.getCoordinators);
     this.router.get(`${this.path}/getCoordinatorDetails`, this.apisController.getCoordinatorDetails);
+    this.router.get(`${this.path}/getHealth`, this.apisController.getHealth);
+    this.router.get(`${this.path}/getDuplicatedUsersByEmail`, this.apisController.getDuplicatedUsersByEmail);
+    this.router.get(`${this.path}/getDuplicatedUsersByName`, this.apisController.getDuplicatedUsersByName);
+    this.router.get(`${this.path}/getUnassignedUsers`, this.apisController.getUnassignedUsers);
+    this.router.get(`${this.path}/getInactiveUsers`, this.apisController.getInactiveUsers);
+    this.router.get(`${this.path}/getSimilarByEmail`, this.apisController.getSimilarByEmail);
+    this.router.get(`${this.path}/getSimilarByName`, this.apisController.getSimilarByName);
+    this.router.get(`${this.path}/getApproachingOneYear`, this.apisController.getApproachingOneYear);
   }
 }

@@ -22,4 +22,5 @@ export declare class AuthService {
     hashPassword(password: string, saltRounds?: number): Promise<string>;
     getAdminFromToken(token: string): Promise<any>;
     resetPassword(data: any): Promise<any>;
+    sendResetLink(data: any): Promise<true | undefined>;
 }

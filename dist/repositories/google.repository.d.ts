@@ -10,6 +10,10 @@ export interface IGoogleRepository {
     getUserAssignments(id: number): Promise<any>;
     updateProductionAssignment(object: any): Promise<any>;
     addHistoricalData(object: any): Promise<any>;
+    getProductionAssignments(): Promise<any>;
+    deleteProductionAssignment(id: number): Promise<any>;
+    addSnapshot(object: any): Promise<any>;
+    addReportAction(object: any): Promise<any>;
 }
 export declare class GoogleRepository implements IGoogleRepository {
     private db;
@@ -24,4 +28,8 @@ export declare class GoogleRepository implements IGoogleRepository {
     updateProductionAssignment(object: any): Promise<any>;
     updateUser(object: any): Promise<any>;
     addHistoricalData(object: any): Promise<any>;
+    getProductionAssignments(): Promise<any>;
+    deleteProductionAssignment(production_assignment_id: number): Promise<any>;
+    addSnapshot(object: any): Promise<any>;
+    addReportAction(object: any): Promise<any>;
 }

@@ -13,4 +13,12 @@ export declare class ApisController {
     updateAdmin: (req: Request, res: Response, next: NextFunction) => Promise<void>;
     getCoordinators: (req: Request, res: Response, next: NextFunction) => Promise<void>;
     getCoordinatorDetails: (req: Request, res: Response, next: NextFunction) => Promise<void>;
+    getHealth: (req: Request, res: Response, next: NextFunction) => Promise<void>;
+    getDuplicatedUsersByEmail: (req: Request, res: Response, next: NextFunction) => Promise<void>;
+    getDuplicatedUsersByName: (req: Request, res: Response, next: NextFunction) => Promise<void>;
+    getUnassignedUsers: (req: Request, res: Response, next: NextFunction) => Promise<void>;
+    getInactiveUsers: (req: Request, res: Response, next: NextFunction) => Promise<void>;
+    getSimilarByEmail: (req: Request, res: Response, next: NextFunction) => Promise<void>;
+    getSimilarByName: (req: Request, res: Response, next: NextFunction) => Promise<void>;
+    getApproachingOneYear: (req: Request, res: Response, next: NextFunction) => Promise<void>;
 }

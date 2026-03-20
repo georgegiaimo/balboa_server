@@ -88,6 +88,28 @@ let GoogleRepository = class GoogleRepository {
         const header = result;
         return header.affectedRows > 0 ? header.insertId : undefined;
     }
+    async getProductionAssignments() {
+        //const data = user.toPersistence();
+        const [result] = await this.db.query(`SELECT * FROM production_assignments`);
+        return result;
+    }
+    async deleteProductionAssignment(production_assignment_id) {
+        //const data = user.toPersistence();
+        const [result] = await this.db.query(`DELETE FROM production_assignments WHERE production_assignment_id=${production_assignment_id}`);
+        return result;
+    }
+    async addSnapshot(object) {
+        //const data = user.toPersistence();
+        const [result] = await this.db.query(`INSERT google_data_snapshots SET ?`, [object]);
+        const header = result;
+        return header.affectedRows > 0 ? header.insertId : undefined;
+    }
+    async addReportAction(object) {
+        //const data = user.toPersistence();
+        const [result] = await this.db.query(`INSERT report_actions SET ?`, [object]);
+        const header = result;
+        return header.affectedRows > 0 ? header.insertId : undefined;
+    }
 };
 exports.GoogleRepository = GoogleRepository;
 exports.GoogleRepository = GoogleRepository = __decorate([

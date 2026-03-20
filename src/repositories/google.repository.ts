@@ -19,6 +19,9 @@ export interface IGoogleRepository {
 
     getProductionAssignments(): Promise<any>;
     deleteProductionAssignment(id:number): Promise<any>;
+
+    addSnapshot(object:any): Promise<any>;
+    addReportAction(object:any): Promise<any>;
   //findById(id: string): Promise<User | undefined>;
   //findByEmail(email: string): Promise<User | undefined>;
   //save(user: User): Promise<User>;
@@ -177,6 +180,30 @@ export class GoogleRepository implements IGoogleRepository {
         );
 
         return result;
+    }
+
+    async addSnapshot(object: any): Promise<any> {
+        //const data = user.toPersistence();
+
+        const [result] = await this.db.query<ResultSetHeader>(
+            `INSERT google_data_snapshots SET ?`,
+            [object]
+        );
+
+        const header = result as ResultSetHeader;
+        return header.affectedRows > 0 ? header.insertId : undefined;
+    }
+
+    async addReportAction(object: any): Promise<any> {
+        //const data = user.toPersistence();
+
+        const [result] = await this.db.query<ResultSetHeader>(
+            `INSERT report_actions SET ?`,
+            [object]
+        );
+
+        const header = result as ResultSetHeader;
+        return header.affectedRows > 0 ? header.insertId : undefined;
     }
 
     

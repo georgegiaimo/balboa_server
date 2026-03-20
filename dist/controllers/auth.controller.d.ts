@@ -8,5 +8,6 @@ export declare class AuthController {
     logIn: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
     getAdminFromToken: (req: Request, res: Response, next: NextFunction) => Promise<void>;
     resetPassword: (req: Request, res: Response, next: NextFunction) => Promise<void>;
+    sendResetLink: (req: Request, res: Response, next: NextFunction) => Promise<void>;
     logOut: import("express").RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
 }

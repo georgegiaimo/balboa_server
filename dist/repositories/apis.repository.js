@@ -70,7 +70,7 @@ let ApisRepository = class ApisRepository {
     async getUserAssignments(user_id) {
         //const data = user.toPersistence();
         const [result] = await this.db.query(`SELECT 
-            production_assignments.status AS assignment_status,
+            production_assignments.production_assignment_id, production_assignments.user_id, production_assignments.status AS assignment_status,
             productions.*
             FROM production_assignments 
             LEFT JOIN productions ON productions.production_id=production_assignments.production_id 

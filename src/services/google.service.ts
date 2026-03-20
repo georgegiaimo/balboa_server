@@ -480,6 +480,15 @@ export class GoogleService {
 
         var google_users = google_users_crew_tv.concat(google_users_mount22prod);
 
+        //save snapshot
+        var snapshot_object = {
+            users: JSON.stringify(google_users),
+            org_units: JSON.stringify(google_org_units),
+            timestamp: Date.now()
+        }
+
+        await this.googleRepository.addSnapshot(snapshot_object);
+
         google_users.forEach((user:any) => {
             //find org unit
             var org_unit = google_org_units.find((x:any) => {return x.orgUnitPath == user.orgUnitPath});
@@ -507,10 +516,11 @@ export class GoogleService {
             if (record){
 
                 //update last login time if different
-                if (record.last_login_time != new Date(user_gg.lastLoginTime).getTime()) {
+                if (record.last_login_time != new Date(user_gg.lastLoginTime).getTime() || record.status != 'active') {
                     var user_objectx = {
                         user_id: record.user_id,
-                        last_login_time: new Date(user_gg.lastLoginTime).getTime()
+                        last_login_time: new Date(user_gg.lastLoginTime).getTime(),
+                        status: 'active'
                     }
 
                     await this.googleRepository.updateUser(user_objectx);
@@ -520,11 +530,21 @@ export class GoogleService {
                 var assignments = await this.googleRepository.getUserAssignments(record.user_id);
                 
                 //find current assignment
-                var current_asignment = assignments.find((x:any) => { return x.assignment_status == 'active'});
+                var current_assignment = assignments.find((x:any) => { return x.assignment_status == 'active'});
 
-                if (current_asignment){
-                    if (current_asignment.google_org_unit_id == user_gg.orgUnitId){
+                if (current_assignment){
+                    if (current_assignment.google_org_unit_id == user_gg.orgUnitId){
                         //user assignment is ok
+                        if (current_assignment.assignment_status != 'active'){
+                            //update user assignment
+                            var assignmentx = {
+                                production_assignment_id: current_assignment.production_assignment_id,
+                                status: 'active'
+                            }
+
+                            await this.googleRepository.updateProductionAssignment(assignmentx);
+                            
+                        }
                     }
                     else {
                         //user has been given a new assignment
@@ -537,7 +557,7 @@ export class GoogleService {
                                 ended_timestamp: Date.now()
                             }
 
-                            console.log('Update production assignment, inactive...', record.first_name, record.last_name, current_asignment.name);
+                            console.log('Update production assignment, inactive...', record.first_name, record.last_name, current_assignment.name);
                             await this.googleRepository.updateProductionAssignment(object);
                         }
 
@@ -562,7 +582,7 @@ export class GoogleService {
                 var first_name = name_tags[0];
                 var last_name = name_tags[1] + (name_tags[2] ? (' ' + name_tags[2]) : '') + (name_tags[3] ? (' ' + name_tags[3]) : '') + (name_tags[4] ? (' ' + name_tags[4]) : '');
 
-                var user_object = {
+                var user_object:any = {
                     google_id: user_gg.id,
                     first_name: first_name,
                     last_name: last_name,
@@ -574,11 +594,15 @@ export class GoogleService {
 
                 console.log('adding new user', user_object.first_name, user_object.last_name);
                 var user_id = await this.googleRepository.addUser(user_object);
+                user_object.user_id = user_id;
                 
+                await this.newReportAction('user-added',{user_id: user_id}, `New user ${first_name} ${last_name} (${user_object.personal_email}) was added.`);
 
                 //find production based on user orgUnitPath value
                 var productionx = productions.find((x:any) => { return x.org_unit_path == user_gg.orgUnitPath});
-                if (productionx) await this.addNewProductionAssignment(productionx, {user_id: user_id});
+                if (productionx) {
+                    await this.addNewProductionAssignment(productionx, user_object);
+                }
                 else console.log('org unit for new user not found in db', user_gg.orgUnitPath);
 
             }
@@ -618,7 +642,7 @@ export class GoogleService {
                     ended_timestamp: Date.now()
                 }
 
-                console.log('user no longer in google, set assignemnt to inactive...', user.first_name, user.last_name, assignment.name);
+                console.log('user no longer in google, set assignment to inactive...', user.first_name, user.last_name, assignment.name);
                 await this.googleRepository.updateProductionAssignment(objectn);
             }
 
@@ -652,7 +676,11 @@ export class GoogleService {
             }
 
             console.log('Adding production assignment...');
-            await this.googleRepository.addProductionAssignment(new_assignment);
+            var production_assignment_id = await this.googleRepository.addProductionAssignment(new_assignment);
+
+            await this.newReportAction('new-assignment',
+                {user_id: user.user_id, production_id: production.production_id, production_assignment_id: production_assignment_id}, 
+                `User ${user.first_name} ${user.last_name} (${user.personal_email}) was added to ${production.name}.`);
 
         }
     }
@@ -709,12 +737,112 @@ export class GoogleService {
         }
     }
 
+    async newReportAction(
+        action:string,
+        ids:any,
+        description:string
+    ){
+        var object = {
+            action: action,
+            user_id: ids.user_id ? ids.user_id:null,
+            production_id: ids.production_id ? ids.production_id: null,
+            production_assignment_id: ids.production_assignment_id ? ids.production_assignment_id:null,
+            action_by_user_id: 0,
+            timestamp: Date.now(),
+            description: description
+        }
+
+        await this.googleRepository.addReportAction(object);
+    }
+
+    async deleteGoogleUser(googleUserId: string, accessToken: string): Promise<void> {
+
+        var access_token = await this.getAccessToken(keys, 'admin@crew-tv.com');
+
+        const url = `https://admin.googleapis.com/admin/directory/v1/users/${googleUserId}`;
+
+        try {
+            const response = await axios.delete(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Accept': 'application/json',
+                },
+            });
+
+            if (response.status === 204 || response.status === 200) {
+                console.log(`Successfully deleted user: ${googleUserId}`);
+            }
+        } catch (error: any) {
+            // Handle specific Google API errors
+            if (error.response) {
+                console.error('Error deleting user:', error.response.data.error.message);
+                throw new Error(`Google API Error: ${error.response.data.error.code}`);
+            } else {
+                console.error('Network or setup error:', error.message);
+                throw error;
+            }
+        }
+    }
+
     async syncGoogleData(){
         console.log('------------------- Starting ---------------');
         await this.syncProductions();
         console.log('Finished sync productions...');
         await this.syncUsers();
         console.log('Finished sync users...');
+    }
+
+    getLevenshteinDistance(a: string, b: string): number {
+        const matrix = Array.from({ length: b.length + 1 }, (_, i) => [i]);
+        for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+
+        for (let i = 1; i <= b.length; i++) {
+            for (let j = 1; j <= a.length; j++) {
+                matrix[i][j] = b[i - 1] === a[j - 1]
+                    ? matrix[i - 1][j - 1]
+                    : Math.min(matrix[i - 1][j - 1], matrix[i][j - 1], matrix[i - 1][j]) + 1;
+            }
+        }
+        return matrix[b.length][a.length];
+    }
+
+    getSimilarity(str1: string, str2: string, threshold: number = 0.8): number {
+        const s1 = str1.toLowerCase().trim();
+        const s2 = str2.toLowerCase().trim();
+
+        if (s1 === s2) return 1; // Exact match
+
+        const distance = this.getLevenshteinDistance(s1, s2);
+        const maxLength = Math.max(s1.length, s2.length);
+
+        // Calculate similarity: 1 - (distance / total length)
+        const similarity = 1 - (distance / maxLength);
+
+        return similarity; //>= threshold;
+    }
+
+    async temp(){
+        var users = await this.googleRepository.getUsers();
+        
+        //check similr
+        //var similar = [];
+        users.forEach((x:any, i:number) => {
+            users.forEach((y:any, j:number) => {
+                //compare emails
+                if (j > i){
+                //var similarity = this.getSimilarity(x.personal_email, y.personal_email);
+                var similarity = this.getSimilarity((x.first_name + ' ' + x.last_name), (y.first_name + ' ' + y.last_name));
+                    if (similarity > 0.9 && similarity < 1.0) {
+                        //console.log(similarity, x.personal_email, y.personal_email);
+                        console.log((x.first_name + ' ' + x.last_name), (y.first_name + ' ' + y.last_name))
+                    }
+                }
+                
+            })
+        });
+        console.log('finished');
+        
+        
     }
 
 

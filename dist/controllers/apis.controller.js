@@ -161,6 +161,94 @@ let ApisController = class ApisController {
                 next(error); // Pass to global error handler
             }
         };
+        this.getHealth = async (req, res, next) => {
+            try {
+                // Controller calls the service
+                const result = await this.apisService.getHealth();
+                // Controller sends the final response
+                res.status(200).json({ data: result, message: 'success' });
+            }
+            catch (error) {
+                next(error); // Pass to global error handler
+            }
+        };
+        this.getDuplicatedUsersByEmail = async (req, res, next) => {
+            try {
+                // Controller calls the service
+                const result = await this.apisService.getDuplicatedUsersByEmail();
+                // Controller sends the final response
+                res.status(200).json({ data: result, message: 'success' });
+            }
+            catch (error) {
+                next(error); // Pass to global error handler
+            }
+        };
+        this.getDuplicatedUsersByName = async (req, res, next) => {
+            try {
+                // Controller calls the service
+                const result = await this.apisService.getDuplicatedUsersByName();
+                // Controller sends the final response
+                res.status(200).json({ data: result, message: 'success' });
+            }
+            catch (error) {
+                next(error); // Pass to global error handler
+            }
+        };
+        this.getUnassignedUsers = async (req, res, next) => {
+            try {
+                // Controller calls the service
+                const result = await this.apisService.getUnassignedUsers();
+                // Controller sends the final response
+                res.status(200).json({ data: result, message: 'success' });
+            }
+            catch (error) {
+                next(error); // Pass to global error handler
+            }
+        };
+        this.getInactiveUsers = async (req, res, next) => {
+            try {
+                // Controller calls the service
+                const result = await this.apisService.getInactiveUsers();
+                // Controller sends the final response
+                res.status(200).json({ data: result, message: 'success' });
+            }
+            catch (error) {
+                next(error); // Pass to global error handler
+            }
+        };
+        this.getSimilarByEmail = async (req, res, next) => {
+            try {
+                // Controller calls the service
+                const result = await this.apisService.getSimilarByEmail();
+                // Controller sends the final response
+                res.status(200).json({ data: result, message: 'success' });
+            }
+            catch (error) {
+                next(error); // Pass to global error handler
+            }
+        };
+        this.getSimilarByName = async (req, res, next) => {
+            try {
+                // Controller calls the service
+                const result = await this.apisService.getSimilarByName();
+                // Controller sends the final response
+                res.status(200).json({ data: result, message: 'success' });
+            }
+            catch (error) {
+                next(error); // Pass to global error handler
+            }
+        };
+        this.getApproachingOneYear = async (req, res, next) => {
+            try {
+                // Controller calls the service
+                const result = await this.apisService.getApproachingOneYear();
+                // Controller sends the final response
+                res.status(200).json({ data: result, message: 'success' });
+            }
+            catch (error) {
+                next(error); // Pass to global error handler
+            }
+        };
     }
 };
 exports.ApisController = ApisController;

@@ -28,6 +28,7 @@ let AuthRoute = class AuthRoute {
         this.router.post(`${this.path}/logIn`, this.authController.logIn);
         this.router.get(`${this.path}/getAdminFromToken`, this.authController.getAdminFromToken);
         this.router.post(`${this.path}/resetPassword`, this.authController.resetPassword);
+        this.router.post(`${this.path}/sendResetLink`, this.authController.sendResetLink);
     }
 };
 exports.AuthRoute = AuthRoute;

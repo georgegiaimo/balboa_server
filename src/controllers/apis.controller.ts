@@ -173,5 +173,101 @@ export class ApisController {
         }
     };
 
+    public getHealth = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            // Controller calls the service
+            const result = await this.apisService.getHealth();
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
+    public getDuplicatedUsersByEmail = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            // Controller calls the service
+            const result = await this.apisService.getDuplicatedUsersByEmail();
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
+    public getDuplicatedUsersByName = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            // Controller calls the service
+            const result = await this.apisService.getDuplicatedUsersByName();
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
+    public getUnassignedUsers = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            // Controller calls the service
+            const result = await this.apisService.getUnassignedUsers();
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
+    public getInactiveUsers = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            // Controller calls the service
+            const result = await this.apisService.getInactiveUsers();
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
+    public getSimilarByEmail = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            // Controller calls the service
+            const result = await this.apisService.getSimilarByEmail();
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
+    public getSimilarByName = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            // Controller calls the service
+            const result = await this.apisService.getSimilarByName();
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
+    public getApproachingOneYear = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            // Controller calls the service
+            const result = await this.apisService.getApproachingOneYear();
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
 
 }

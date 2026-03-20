@@ -51,12 +51,11 @@ let SendGridService = class SendGridService {
         this.sendEmail(mailObj);
     }
     async resetPassword(data) {
-        var token = this.commonService.createToken();
         var link;
         if (process.env.ENVIRONMENT == 'development')
-            link = 'http://localhost:4200/password-reset/' + token;
+            link = 'http://localhost:4200/password-reset/' + data.password_reset_token;
         else
-            link = 'https://askbalboa.com/password-reset/' + token;
+            link = 'https://askbalboa.com/password-reset/' + data.password_reset_token;
         var mailObj = {
             to: data.email,
             from: {
