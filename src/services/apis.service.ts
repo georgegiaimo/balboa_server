@@ -57,16 +57,25 @@ export class ApisService {
         var production = productionx[0];
         var coordinators = await this.apisRepository.getProductionCoordinators(production_id);
         var users = await this.apisRepository.getProductionUsers(production_id);
+        var activity = await this.apisRepository.getProductionActivity(production_id);
 
-        //check assignments for each user
+        //format date
         users.forEach((x:any) => {
            x.last_login_date = this.commonService.getDate(x.last_login_time);
+        });
+
+        //remove user duplicates
+        const uniqueUsers = [...new Map(users.map((user:any) => [user.user_id, user])).values()];
+
+        activity.forEach((x:any) => {
+            x.date = this.commonService.getDate(x.timestamp);
         })
 
         return {
             production: production,
-            users: users,
-            coordinators: coordinators
+            users: uniqueUsers,
+            coordinators: coordinators,
+            activity: activity
         }
     }
 
@@ -223,9 +232,73 @@ export class ApisService {
             var productionsx = productions.filter((n:any) => { return production_ids.indexOf(n.production_id) > -1});
             
             if (productionsx[0]) x.production = productionsx[0].name;
-        })
+            assignments.forEach((n:any) => {
+                var record = productions.find((m:any) => { return m.production_id == n.production_id});
+                if (record) n.production_name = record.name;
+            });
+            x.assignments = assignments;
+            if (x.assignments.length == 0) x.status = 'unassigned';
+            else {
+                //check if there s an active assignment
+                var recordx = assignments.find((n:any) => { return n.status == 'active'});
+                if (recordx) x.status = 'active';
+                else x.status = 'unknown';
+            }
+        });
               
         return coordinators;
+    }
+
+    public async addCoordinator(data:any){
+
+        var coordinator = {
+            first_name: data.first_name,
+            last_name: data.last_name,
+            email: data.email,
+            created_timestamp: Date.now(),
+            notes: data.notes 
+        }
+
+        var coordinator_id = this.apisRepository.addCoordinator(coordinator);
+
+        return coordinator_id;
+
+    }
+
+    public async addCoordinatorAssignment(data:any){
+
+        var coordinator_assignment = {
+            coordinator_id: data.coordinator_id,
+            production_id: data.production_id,
+            notes: data.notes,
+            created_timestamp: Date.now(),
+            created_by_admin_id: data.admin_id,
+            status: data.status
+        }
+
+        var coordinator_assignment_id = this.apisRepository.addCoordinatorAssignment(coordinator_assignment);
+
+        return coordinator_assignment_id;
+
+    }
+
+    public async updateCoordinatorAssignment(data:any){
+
+        var coordinator_assignment:any = {
+            coordinator_assignment_id: data.coordinator_assignment_id,
+            notes: data.notes
+        }
+
+        if (data.status == 'inactive'){
+            coordinator_assignment.ended_timestamp = Date.now(),
+            coordinator_assignment.status = data.status,
+            coordinator_assignment.ended_by_admin_id = data.admin_id
+        }
+
+        var coordinator_assignment_id = this.apisRepository.updateCoordinatorAssignment(coordinator_assignment);
+
+        return coordinator_assignment_id;
+
     }
 
     public async getCoordinatorDetails(coordinator_id:number){
@@ -235,8 +308,8 @@ export class ApisService {
 
         assignments.forEach((x:any) => {
             //get start and end dates
-            x.assignment_start_date = this.commonService.getDate(x.created_timestamp);
-            x.assignment_end_date = this.commonService.getDate(x.ended_timestamp);
+            x.assignment_start_date = this.commonService.getDate(x.assignment_created_timestamp);
+            x.assignment_end_date = this.commonService.getDate(x.assignment_ended_timestamp);
         });
 
         return {
@@ -244,6 +317,26 @@ export class ApisService {
             assignments: assignments
         }
 
+    }
+
+    public async getCoordinatorAssignment(coordinator_assignment_id:number){
+        var assignmentx = await this.apisRepository.getCoordinatorAssignment(coordinator_assignment_id);
+        console.log('assignmentx',assignmentx);
+        var assignment = assignmentx[0];
+        var productionx = await this.apisRepository.getProduction(assignment.production_id);
+        var coordinatorx = await this.apisRepository.getCoordinator(assignment.coordinator_id);
+        
+        return {
+            coordinator_assignment: assignment,
+            production: productionx[0],
+            coordinator: coordinatorx[0]
+        }
+    }
+
+    public async getCoordinator(coordinator_id:number){
+
+        var coordinatorx = await this.apisRepository.getCoordinator(coordinator_id);
+        return coordinatorx[0];
     }
 
     public async getHealth(){
@@ -346,6 +439,16 @@ export class ApisService {
             //similar_by_name: similar_by_email_counter
         }
 
+    }
+
+    public async getActivity(){
+        var activity = await this.apisRepository.getReportActions();
+
+        activity.forEach((x:any) => {
+            x.date = this.commonService.getDate(x.timestamp);
+        });
+
+        return activity;
     }
 
     public async getDuplicatedUsersByEmail(){

@@ -159,6 +159,27 @@ export class ApisController {
         }
     };
 
+    public getCoordinator = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+
+            const coordinator_id = req.query.id as string;
+
+            // 2. Optional: Basic validation
+            if (!coordinator_id) {
+                return res.status(400).json({ message: 'ID query parameter is required' });
+            }
+
+            // Controller calls the service
+            const result = await this.apisService.getCoordinator(Number(coordinator_id));
+
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
     public getCoordinatorDetails = async (req: Request, res: Response, next: NextFunction) => {
         try {
 
@@ -173,10 +194,78 @@ export class ApisController {
         }
     };
 
+    public getCoordinatorAssignment = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+
+            var coordinator_assignment_id = Number(req.query.id); 
+            // Controller calls the service
+            const result = await this.apisService.getCoordinatorAssignment(coordinator_assignment_id);
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
+    public addCoordinator = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+
+            var data = req.body; 
+            // Controller calls the service
+            const result = await this.apisService.addCoordinator(data);
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
+    public addCoordinatorAssignment = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+
+            var data = req.body; 
+            // Controller calls the service
+            const result = await this.apisService.addCoordinatorAssignment(data);
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
+    public updateCoordinatorAssignment = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+
+            var data = req.body; 
+            // Controller calls the service
+            const result = await this.apisService.updateCoordinatorAssignment(data);
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
     public getHealth = async (req: Request, res: Response, next: NextFunction) => {
         try {
             // Controller calls the service
             const result = await this.apisService.getHealth();
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
+    public getActivity = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            // Controller calls the service
+            const result = await this.apisService.getActivity();
 
             // Controller sends the final response
             res.status(200).json({ data: result, message: 'success' });

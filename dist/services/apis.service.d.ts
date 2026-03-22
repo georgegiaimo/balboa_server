@@ -9,8 +9,9 @@ export declare class ApisService {
     getProductions(): Promise<any>;
     getProductionDetails(production_id: number): Promise<{
         production: any;
-        users: any;
+        users: unknown[];
         coordinators: any;
+        activity: any;
     }>;
     getUserDetails(user_id: number): Promise<{
         user: any;
@@ -25,10 +26,19 @@ export declare class ApisService {
     getAdmin(admin_id: number): Promise<any>;
     updateAdmin(object: any): Promise<any>;
     getCoordinators(): Promise<any>;
+    addCoordinator(data: any): Promise<any>;
+    addCoordinatorAssignment(data: any): Promise<any>;
+    updateCoordinatorAssignment(data: any): Promise<any>;
     getCoordinatorDetails(coordinator_id: number): Promise<{
         coordinator: any;
         assignments: any;
     }>;
+    getCoordinatorAssignment(coordinator_assignment_id: number): Promise<{
+        coordinator_assignment: any;
+        production: any;
+        coordinator: any;
+    }>;
+    getCoordinator(coordinator_id: number): Promise<any>;
     getHealth(): Promise<{
         duplicated_users_by_name: number;
         duplicated_users_by_email: number;
@@ -36,6 +46,7 @@ export declare class ApisService {
         inactive_users: number;
         approaching_one_year: number;
     }>;
+    getActivity(): Promise<any>;
     getDuplicatedUsersByEmail(): Promise<any[]>;
     getDuplicatedUsersByName(): Promise<any[]>;
     getUnassignedUsers(): Promise<any>;

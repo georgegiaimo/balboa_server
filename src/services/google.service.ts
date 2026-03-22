@@ -421,7 +421,9 @@ export class GoogleService {
                 }
 
                 console.log('production does not exist in db, creating ...', org_unit.name);
-                await this.googleRepository.addProduction(object2);
+                var production_id = await this.googleRepository.addProduction(object2);
+                await this.newReportAction('production-added',{production_id: production_id}, 
+                    [{text: org_unit.name, type: 'production', id: production_id }]);
 
             }
         }
@@ -441,14 +443,20 @@ export class GoogleService {
 
         var deleted_productions = productions2.filter((x:any) => { return !x.exists_in_google; });
 
-        for (let item of deleted_productions){
-            var objectx = {
-                production_id: item.production_id,
-                status: 'removed'
-            }
+        
 
-            console.log('production no longer in google, update record in db...', item.name);
-            await this.googleRepository.updateProduction(objectx);
+        for (let item of deleted_productions){
+            if (item.status != 'removed') {
+                var objectx = {
+                    production_id: item.production_id,
+                    status: 'removed'
+                }
+
+                console.log('production no longer in google, update record in db...', item.name);
+                await this.googleRepository.updateProduction(objectx);
+                await this.newReportAction('production-removed', { production_id: item.production_id }, 
+                    [{text: item.name, type: 'production', id: production_id }]);
+            }
         }
 
     }
@@ -489,6 +497,10 @@ export class GoogleService {
 
         await this.googleRepository.addSnapshot(snapshot_object);
 
+        var productions = await this.googleRepository.getProductions();
+        var users = await this.googleRepository.getUsers();
+
+
         google_users.forEach((user:any) => {
             //find org unit
             var org_unit = google_org_units.find((x:any) => {return x.orgUnitPath == user.orgUnitPath});
@@ -500,9 +512,7 @@ export class GoogleService {
         //console.log('google_users[0]', google_users[0]);
 
              
-        var productions = await this.googleRepository.getProductions();
-        var users = await this.googleRepository.getUsers();
-
+        
          for (let user_gg of google_users){
 
             var user_gg_personal_email = user_gg.emails[0] ? user_gg.emails[0].address:'';
@@ -531,10 +541,13 @@ export class GoogleService {
                 
                 //find current assignment
                 var current_assignment = assignments.find((x:any) => { return x.assignment_status == 'active'});
+                //console.log('current_assignment', current_assignment);
 
                 if (current_assignment){
                     if (current_assignment.google_org_unit_id == user_gg.orgUnitId){
+                        
                         //user assignment is ok
+                        /*
                         if (current_assignment.assignment_status != 'active'){
                             //update user assignment
                             var assignmentx = {
@@ -545,6 +558,8 @@ export class GoogleService {
                             await this.googleRepository.updateProductionAssignment(assignmentx);
                             
                         }
+                        */
+                        
                     }
                     else {
                         //user has been given a new assignment
@@ -596,7 +611,9 @@ export class GoogleService {
                 var user_id = await this.googleRepository.addUser(user_object);
                 user_object.user_id = user_id;
                 
-                await this.newReportAction('user-added',{user_id: user_id}, `New user ${first_name} ${last_name} (${user_object.personal_email}) was added.`);
+                await this.newReportAction('user-added',{user_id: user_id}, 
+                    [{text: `${first_name} ${last_name} (${user_object.personal_email})`, type: 'user', id: user_id }]
+                    );
 
                 //find production based on user orgUnitPath value
                 var productionx = productions.find((x:any) => { return x.org_unit_path == user_gg.orgUnitPath});
@@ -627,25 +644,43 @@ export class GoogleService {
         var deleted_users = users2.filter((x:any) => { return !x.exists_in_google; });
 
         for (let user of deleted_users){
-            
+
             //check assignment
             var assignments = await this.googleRepository.getUserAssignments(user.user_id);
             
             //if any assignment still shows active, set to inactive
-            var active_assignments = assignments.filter((x:any) => { return x.status == 'active'});
+            var active_assignments = assignments.filter((x:any) => { return x.assignment_status == 'active'});
+            //console.log('user no longer in google, set assignments to inactive...', user.first_name, user.last_name);
+                for (let assignment of active_assignments) {
 
-            for (let assignment of active_assignments){
-                
-                var objectn = {
-                    production_assignment_id: assignment.production_assignment_id,
-                    status: 'inactive',
-                    ended_timestamp: Date.now()
+                    var objectn = {
+                        production_assignment_id: assignment.production_assignment_id,
+                        status: 'inactive',
+                        ended_timestamp: Date.now()
+                    }
+
+                    await this.googleRepository.updateProductionAssignment(objectn);
+                    await this.newReportAction('assignment-removed',
+                        { user_id: user_id, production_id: assignment.production_id, production_assignment_id: assignment.production_assignment_id },
+                        [{ text: `${user.first_name} ${user.last_name} (${user.personal_email})`, type: 'user', id: user.user_id},
+                        {text: assignment.name, type: 'production', id: assignment.production_id }]);
+                       
+
+                }
+            
+            if (user.status != 'removed') {
+
+                //update user to 'removed'
+                var user_objectz = {
+                    user_id: user.user_id,
+                    status: 'removed'
                 }
 
-                console.log('user no longer in google, set assignment to inactive...', user.first_name, user.last_name, assignment.name);
-                await this.googleRepository.updateProductionAssignment(objectn);
+                await this.googleRepository.updateUser(user_objectz);
+                await this.newReportAction('user-removed', { user_id: user_id }, 
+                    [{ text: `${user.first_name} ${user.last_name} (${user.personal_email})`, type: 'user', id: user_id}]);
+                   
             }
-
         }
 
         //store historical data
@@ -657,8 +692,7 @@ export class GoogleService {
 
         
         await this.googleRepository.addHistoricalData(historical_data_object);
-        await this.deleteDuplicateAssignments();
-
+        //await this.deleteDuplicateAssignments();
 
     }
 
@@ -679,8 +713,10 @@ export class GoogleService {
             var production_assignment_id = await this.googleRepository.addProductionAssignment(new_assignment);
 
             await this.newReportAction('new-assignment',
-                {user_id: user.user_id, production_id: production.production_id, production_assignment_id: production_assignment_id}, 
-                `User ${user.first_name} ${user.last_name} (${user.personal_email}) was added to ${production.name}.`);
+                {user_id: user.user_id, production_id: production.production_id, production_assignment_id: production_assignment_id},
+                [{text: `${user.first_name} ${user.last_name} (${user.personal_email})`, type: 'user', id: user.user_id},
+                    {text: production.name, type: 'production', id: production.production_id}]);
+                
 
         }
     }
@@ -721,27 +757,47 @@ export class GoogleService {
         var ctr = 0;
         assignments.forEach((x:any,i:any) => {
             assignments.forEach((y:any, j:any) => {
-                if (x.production_id == y.production_id && x.user_id == y.user_id && j > i){
+                if (x.production_id == y.production_id && x.user_id == y.user_id){
                     ctr += 1;
+
+
+                    var delete_id:number = -1;
+                    if(y.status == 'active') delete_id = x.production_assignment_id;
+                    else if(y.status != 'active') delete_id = y.production_assignment_id;
+
+                    if (delete_id){
                     //console.log('same', ctr);
-                    if (duplicated_assignments.indexOf(y.production_assignment_id) == -1) 
+                    if (duplicated_assignments.indexOf(delete_id) == -1) 
                         duplicated_assignments.push(y.production_assignment_id);
+                    }
                 }
             });
         });
 
         console.log('duplicated_assignments', duplicated_assignments.length);
+        /*
         for (let id of duplicated_assignments){
             await this.googleRepository.deleteProductionAssignment(id);
             console.log('deleting duplicate...')
         }
+        */
+        console.log('finished...')
     }
 
     async newReportAction(
         action:string,
         ids:any,
-        description:string
+        params:any[]
     ){
+
+        var template;
+        if (action == 'production-added') template = 'Production {0} was added.';
+        else if (action == 'production-removed') template = 'Production {0} was removed.';
+        else if (action == 'user-added') template = 'New user {0} was added.';
+        else if (action == 'assignment-removed') template = 'User {0} was removed from {1}.';
+        else if (action == 'user-removed') template = 'User {0} was removed.';
+        else if (action == 'new-assignment') template = 'User {0} was added to {1}.';
+
         var object = {
             action: action,
             user_id: ids.user_id ? ids.user_id:null,
@@ -749,7 +805,8 @@ export class GoogleService {
             production_assignment_id: ids.production_assignment_id ? ids.production_assignment_id:null,
             action_by_user_id: 0,
             timestamp: Date.now(),
-            description: description
+            template: template,
+            params: JSON.stringify(params)
         }
 
         await this.googleRepository.addReportAction(object);

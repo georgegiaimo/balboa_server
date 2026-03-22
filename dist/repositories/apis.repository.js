@@ -24,6 +24,11 @@ let ApisRepository = class ApisRepository {
         const [result] = await this.db.query(`SELECT * FROM productions`);
         return result;
     }
+    async getProduction(production_id) {
+        //const data = user.toPersistence();
+        const [result] = await this.db.query(`SELECT * FROM productions WHERE production_id=${production_id}`);
+        return result;
+    }
     async getProductionAssignments() {
         //const data = user.toPersistence();
         const [result] = await this.db.query(`SELECT * FROM production_assignments`);
@@ -44,6 +49,28 @@ let ApisRepository = class ApisRepository {
         const [result] = await this.db.query(`SELECT * FROM coordinator_assignments`);
         return result;
     }
+    async getCoordinatorAssignment(coordinator_assignment_id) {
+        //const data = user.toPersistence();
+        const [result] = await this.db.query(`SELECT * FROM coordinator_assignments WHERE coordinator_assignment_id=${coordinator_assignment_id}`);
+        return result;
+    }
+    async addCoordinator(object) {
+        //const data = user.toPersistence();
+        const [result] = await this.db.query(`INSERT coordinators SET ?`, [object]);
+        const header = result;
+        return header.affectedRows > 0 ? header.insertId : undefined;
+    }
+    async addCoordinatorAssignment(object) {
+        //const data = user.toPersistence();
+        const [result] = await this.db.query(`INSERT coordinator_assignments SET ?`, [object]);
+        const header = result;
+        return header.affectedRows > 0 ? header.insertId : undefined;
+    }
+    async updateCoordinatorAssignment(object) {
+        //const data = user.toPersistence();
+        const [result] = await this.db.query(`UPDATE coordinator_assignments SET ? WHERE coordinator_assignment_id = ${object.coordinator_assignment_id}`, [object]);
+        return result;
+    }
     async getProductionCoordinators(production_id) {
         //const data = user.toPersistence();
         const [result] = await this.db.query(`SELECT coordinator_assignments.status AS coordinator_assignment_status,
@@ -60,6 +87,11 @@ let ApisRepository = class ApisRepository {
             FROM production_assignments 
             LEFT JOIN users ON users.user_id=production_assignments.user_id 
             WHERE production_assignments.production_id=${production_id}`);
+        return result;
+    }
+    async getProductionActivity(production_id) {
+        //const data = user.toPersistence();
+        const [result] = await this.db.query(`SELECT * FROM report_actions WHERE production_id=${production_id}`);
         return result;
     }
     async getUserDetails(user_id) {
@@ -80,6 +112,11 @@ let ApisRepository = class ApisRepository {
     async getUsers() {
         //const data = user.toPersistence();
         const [result] = await this.db.query(`SELECT * FROM users`);
+        return result;
+    }
+    async getUser(user_id) {
+        //const data = user.toPersistence();
+        const [result] = await this.db.query(`SELECT * FROM users WHERE user_id=${user_id}`);
         return result;
     }
     async getAdmins() {
@@ -122,11 +159,19 @@ let ApisRepository = class ApisRepository {
     async getAssignmentsByCoordinatorId(coordinator_id) {
         //const data = user.toPersistence();
         const [result] = await this.db.query(`SELECT 
-            coordinator_assignments.status AS assignment_status,
+            coordinator_assignments.coordinator_assignment_id, coordinator_assignments.status AS assignment_status, 
+            coordinator_assignments.created_timestamp AS assignment_created_timestamp, 
+            coordinator_assignments.ended_timestamp AS assignment_ended_timestamp,
+            coordinator_assignments.notes AS assignment_notes, 
             productions.*
             FROM coordinator_assignments 
             LEFT JOIN productions ON productions.production_id=coordinator_assignments.production_id 
             WHERE coordinator_assignments.coordinator_id=${coordinator_id}`);
+        return result;
+    }
+    async getReportActions() {
+        //const data = user.toPersistence();
+        const [result] = await this.db.query(`SELECT * FROM report_actions`);
         return result;
     }
 };

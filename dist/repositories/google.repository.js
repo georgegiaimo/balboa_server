@@ -30,7 +30,7 @@ let GoogleRepository = class GoogleRepository {
         //const data = user.toPersistence();
         const [result] = await this.db.query(`INSERT users SET ?`, [object]);
         const header = result;
-        return header.affectedRows > 0 ? header.affectedRows : undefined;
+        return header.affectedRows > 0 ? header.insertId : undefined;
     }
     async getUsers() {
         //const data = user.toPersistence();

@@ -30,7 +30,7 @@ export declare class GoogleService {
     addNewProductionAssignment(production: any, user: any): Promise<void>;
     getUsers(access_token: string): Promise<any[]>;
     deleteDuplicateAssignments(): Promise<void>;
-    newReportAction(action: string, ids: any, description: string): Promise<void>;
+    newReportAction(action: string, ids: any, params: any[]): Promise<void>;
     deleteGoogleUser(googleUserId: string, accessToken: string): Promise<void>;
     syncGoogleData(): Promise<void>;
     getLevenshteinDistance(a: string, b: string): number;

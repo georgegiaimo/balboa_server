@@ -1,39 +1,55 @@
 import { Pool } from 'mysql2/promise';
 export interface IApisRepository {
     getProductions(): Promise<any>;
+    getProduction(production_id: number): Promise<any>;
     getProductionDetails(production_id: number): Promise<any>;
     getProductionAssignments(): Promise<any>;
     getCoordinators(): Promise<any>;
     getCoordinator(coordinator_id: number): Promise<any>;
     getCoordinatorAssignments(): Promise<any>;
+    getCoordinatorAssignment(coordinator_assignment_id: number): Promise<any>;
+    addCoordinator(coordinator: any): Promise<any>;
+    addCoordinatorAssignment(coordinator_assignment: any): Promise<any>;
+    updateCoordinatorAssignment(coordinator_assignment: any): Promise<any>;
     getAssignmentsByCoordinatorId(coordinator_id: number): Promise<any>;
     getProductionCoordinators(production_id: number): Promise<any>;
     getProductionUsers(production_id: number): Promise<any>;
+    getProductionActivity(production_id: number): Promise<any>;
     getUsers(): Promise<any>;
+    getUser(user_id: number): Promise<any>;
     getUserDetails(user_id: number): Promise<any>;
     getUserAssignments(user_id: number): Promise<any>;
     getAdmins(): Promise<any>;
     updateAdmin(admin: any): Promise<any>;
     getAdmin(admin_id: number): Promise<any>;
     getAdminByEmail(email: string): Promise<any>;
+    getReportActions(): Promise<any>;
 }
 export declare class ApisRepository implements IApisRepository {
     private db;
     constructor(db: Pool);
     getProductions(): Promise<any>;
+    getProduction(production_id: number): Promise<any>;
     getProductionAssignments(): Promise<any>;
     getProductionDetails(production_id: number): Promise<any>;
     getCoordinators(): Promise<any>;
     getCoordinatorAssignments(): Promise<any>;
+    getCoordinatorAssignment(coordinator_assignment_id: number): Promise<any>;
+    addCoordinator(object: any): Promise<any>;
+    addCoordinatorAssignment(object: any): Promise<any>;
+    updateCoordinatorAssignment(object: any): Promise<any>;
     getProductionCoordinators(production_id: number): Promise<any>;
     getProductionUsers(production_id: number): Promise<any>;
+    getProductionActivity(production_id: number): Promise<any>;
     getUserDetails(user_id: number): Promise<any>;
     getUserAssignments(user_id: number): Promise<any>;
     getUsers(): Promise<any>;
+    getUser(user_id: number): Promise<any>;
     getAdmins(): Promise<any>;
     getAdmin(admin_id: number): Promise<any>;
     updateAdmin(object: any): Promise<any>;
     getAdminByEmail(email: string): Promise<any>;
     getCoordinator(coordinator_id: number): Promise<any>;
     getAssignmentsByCoordinatorId(coordinator_id: number): Promise<any>;
+    getReportActions(): Promise<any>;
 }

@@ -149,6 +149,22 @@ let ApisController = class ApisController {
                 next(error); // Pass to global error handler
             }
         };
+        this.getCoordinator = async (req, res, next) => {
+            try {
+                const coordinator_id = req.query.id;
+                // 2. Optional: Basic validation
+                if (!coordinator_id) {
+                    return res.status(400).json({ message: 'ID query parameter is required' });
+                }
+                // Controller calls the service
+                const result = await this.apisService.getCoordinator(Number(coordinator_id));
+                // Controller sends the final response
+                res.status(200).json({ data: result, message: 'success' });
+            }
+            catch (error) {
+                next(error); // Pass to global error handler
+            }
+        };
         this.getCoordinatorDetails = async (req, res, next) => {
             try {
                 var coordinator_id = Number(req.query.id);
@@ -161,10 +177,69 @@ let ApisController = class ApisController {
                 next(error); // Pass to global error handler
             }
         };
+        this.getCoordinatorAssignment = async (req, res, next) => {
+            try {
+                var coordinator_assignment_id = Number(req.query.id);
+                // Controller calls the service
+                const result = await this.apisService.getCoordinatorAssignment(coordinator_assignment_id);
+                // Controller sends the final response
+                res.status(200).json({ data: result, message: 'success' });
+            }
+            catch (error) {
+                next(error); // Pass to global error handler
+            }
+        };
+        this.addCoordinator = async (req, res, next) => {
+            try {
+                var data = req.body;
+                // Controller calls the service
+                const result = await this.apisService.addCoordinator(data);
+                // Controller sends the final response
+                res.status(200).json({ data: result, message: 'success' });
+            }
+            catch (error) {
+                next(error); // Pass to global error handler
+            }
+        };
+        this.addCoordinatorAssignment = async (req, res, next) => {
+            try {
+                var data = req.body;
+                // Controller calls the service
+                const result = await this.apisService.addCoordinatorAssignment(data);
+                // Controller sends the final response
+                res.status(200).json({ data: result, message: 'success' });
+            }
+            catch (error) {
+                next(error); // Pass to global error handler
+            }
+        };
+        this.updateCoordinatorAssignment = async (req, res, next) => {
+            try {
+                var data = req.body;
+                // Controller calls the service
+                const result = await this.apisService.updateCoordinatorAssignment(data);
+                // Controller sends the final response
+                res.status(200).json({ data: result, message: 'success' });
+            }
+            catch (error) {
+                next(error); // Pass to global error handler
+            }
+        };
         this.getHealth = async (req, res, next) => {
             try {
                 // Controller calls the service
                 const result = await this.apisService.getHealth();
+                // Controller sends the final response
+                res.status(200).json({ data: result, message: 'success' });
+            }
+            catch (error) {
+                next(error); // Pass to global error handler
+            }
+        };
+        this.getActivity = async (req, res, next) => {
+            try {
+                // Controller calls the service
+                const result = await this.apisService.getActivity();
                 // Controller sends the final response
                 res.status(200).json({ data: result, message: 'success' });
             }

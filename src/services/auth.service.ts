@@ -90,7 +90,8 @@ export class AuthService {
     //update user last login
     var object = {
       admin_id: user.admin_id,
-      last_login: Date.now()
+      last_login: Date.now(),
+      status: 'active'
     };
 
     await this.usersRepository.updateUser(object);

@@ -52,7 +52,7 @@ export class GoogleRepository implements IGoogleRepository {
         );
 
         const header = result as ResultSetHeader;
-        return header.affectedRows > 0 ? header.affectedRows : undefined;
+        return header.affectedRows > 0 ? header.insertId : undefined;
     }
 
     async getUsers(): Promise<any> {

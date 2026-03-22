@@ -46,6 +46,7 @@ class App {
     //this.googleService.getAllUsersFromDirectory();
     //this.googleService.syncGoogleData();
     //this.googleService.temp();
+    //this.googleService.deleteDuplicateAssignments();
     //this.airtableService.getAirtableDataProductions();
   }
 
@@ -144,9 +145,6 @@ class App {
     this.app.use(ErrorMiddleware);
   }
 
-
-  
-  
 
   //
 }

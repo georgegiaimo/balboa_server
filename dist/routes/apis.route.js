@@ -36,8 +36,14 @@ let ApisRoute = class ApisRoute {
         this.router.get(`${this.path}/getAdmin`, this.apisController.getAdmin);
         this.router.post(`${this.path}/updateAdmin`, this.apisController.updateAdmin);
         this.router.get(`${this.path}/getCoordinators`, this.apisController.getCoordinators);
+        this.router.get(`${this.path}/getCoordinator`, this.apisController.getCoordinator);
         this.router.get(`${this.path}/getCoordinatorDetails`, this.apisController.getCoordinatorDetails);
+        this.router.get(`${this.path}/getCoordinatorAssignment`, this.apisController.getCoordinatorAssignment);
+        this.router.post(`${this.path}/addCoordinator`, this.apisController.addCoordinator);
+        this.router.post(`${this.path}/addCoordinatorAssignment`, this.apisController.addCoordinatorAssignment);
+        this.router.post(`${this.path}/updateCoordinatorAssignment`, this.apisController.updateCoordinatorAssignment);
         this.router.get(`${this.path}/getHealth`, this.apisController.getHealth);
+        this.router.get(`${this.path}/getActivity`, this.apisController.getActivity);
         this.router.get(`${this.path}/getDuplicatedUsersByEmail`, this.apisController.getDuplicatedUsersByEmail);
         this.router.get(`${this.path}/getDuplicatedUsersByName`, this.apisController.getDuplicatedUsersByName);
         this.router.get(`${this.path}/getUnassignedUsers`, this.apisController.getUnassignedUsers);
