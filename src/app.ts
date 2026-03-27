@@ -47,6 +47,7 @@ class App {
     //this.googleService.syncGoogleData();
     //this.googleService.temp();
     //this.googleService.deleteDuplicateAssignments();
+    //this.googleService.deleteDuplicateActivityReport();
     //this.airtableService.getAirtableDataProductions();
   }
 

@@ -9,6 +9,7 @@ import { ChatRoute } from '@routes/chat.route';
 import { SystemRoute } from '@routes/system.route';
 import { ReportsRoute } from '@routes/reports.route';
 import { ApisRoute } from '@routes/apis.route';
+import { DocsRoute } from '@routes/docs.route';
 import { Server } from 'socket.io';
 import { initSockets } from './sockets'; // Import your logic
 
@@ -26,7 +27,8 @@ const routes = [
   container.resolve(ChatRoute), 
   container.resolve(SystemRoute),
   container.resolve(ReportsRoute),
-  container.resolve(ApisRoute)
+  container.resolve(ApisRoute),
+  container.resolve(DocsRoute),
 ];
 
 var googleRepository = new GoogleRepository(pool);

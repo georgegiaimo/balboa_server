@@ -122,6 +122,7 @@ export class ApisService {
 
             user.productions = productionsx;
             user.last_login_date = this.commonService.getDate(user.last_login_time);
+            user.creation_date = this.commonService.getDate(user.creation_time);
         });
 
         //console.log('users', users);
@@ -256,12 +257,30 @@ export class ApisService {
             last_name: data.last_name,
             email: data.email,
             created_timestamp: Date.now(),
-            notes: data.notes 
+            notes: data.notes,
+            is_executive: data.is_executive 
         }
 
         var coordinator_id = this.apisRepository.addCoordinator(coordinator);
 
         return coordinator_id;
+
+    }
+
+    public async updateCoordinator(data:any){
+
+        var coordinator = {
+            coordinator_id: data.coordinator_id,
+            first_name: data.first_name,
+            last_name: data.last_name,
+            email: data.email,
+            notes: data.notes,
+            is_executive: data.is_executive 
+        }
+
+        var result = await this.apisRepository.updateCoordinator(coordinator);
+
+        return result;
 
     }
 

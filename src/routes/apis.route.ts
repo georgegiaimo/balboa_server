@@ -30,6 +30,7 @@ export class ApisRoute implements Routes {
     this.router.get(`${this.path}/getCoordinatorDetails`, this.apisController.getCoordinatorDetails);
     this.router.get(`${this.path}/getCoordinatorAssignment`, this.apisController.getCoordinatorAssignment);
     this.router.post(`${this.path}/addCoordinator`, this.apisController.addCoordinator);
+    this.router.post(`${this.path}/updateCoordinator`, this.apisController.updateCoordinator);
     this.router.post(`${this.path}/addCoordinatorAssignment`, this.apisController.addCoordinatorAssignment);
     this.router.post(`${this.path}/updateCoordinatorAssignment`, this.apisController.updateCoordinatorAssignment);
     this.router.get(`${this.path}/getHealth`, this.apisController.getHealth);

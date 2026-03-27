@@ -22,6 +22,8 @@ export interface IGoogleRepository {
 
     addSnapshot(object:any): Promise<any>;
     addReportAction(object:any): Promise<any>;
+    getReportActions(): Promise<any>;
+    deleteReportAction(id:number): Promise<any>;
   //findById(id: string): Promise<User | undefined>;
   //findByEmail(email: string): Promise<User | undefined>;
   //save(user: User): Promise<User>;
@@ -204,6 +206,26 @@ export class GoogleRepository implements IGoogleRepository {
 
         const header = result as ResultSetHeader;
         return header.affectedRows > 0 ? header.insertId : undefined;
+    }
+
+    async getReportActions(): Promise<any> {
+        //const data = user.toPersistence();
+
+        const [result] = await this.db.query<RowDataPacket[]>(
+            `SELECT * FROM report_actions`
+        );
+
+        return result;
+    }
+
+    async deleteReportAction(report_action_id:number): Promise<any> {
+        //const data = user.toPersistence();
+
+        const [result] = await this.db.query<RowDataPacket[]>(
+            `DELETE FROM report_actions WHERE report_action_id=${report_action_id}`
+        );
+
+        return result;
     }
 
     

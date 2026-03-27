@@ -15,6 +15,7 @@ export interface IApisRepository {
     getCoordinatorAssignments(): Promise<any>;
     getCoordinatorAssignment(coordinator_assignment_id:number): Promise<any>;
     addCoordinator(coordinator:any): Promise<any>;
+    updateCoordinator(coordinator:any): Promise<any>;
     addCoordinatorAssignment(coordinator_assignment:any): Promise<any>;
     updateCoordinatorAssignment(coordinator_assignment:any): Promise<any>;
     getAssignmentsByCoordinatorId(coordinator_id:number): Promise<any>;
@@ -133,6 +134,16 @@ export class ApisRepository implements IApisRepository {
 
     }
 
+    async updateCoordinator(object: any): Promise<any> {
+        //const data = user.toPersistence();
+         const [result] = await this.db.query<ResultSetHeader>(
+             `UPDATE coordinators SET ? WHERE coordinator_id = ${object.coordinator_id}`,
+            [object]
+        );
+
+        return result;
+    }
+
     async addCoordinatorAssignment(object: any): Promise<any> {
         //const data = user.toPersistence();
          const [result] = await this.db.query<ResultSetHeader>(
@@ -178,7 +189,7 @@ export class ApisRepository implements IApisRepository {
             users.* 
             FROM production_assignments 
             LEFT JOIN users ON users.user_id=production_assignments.user_id 
-            WHERE production_assignments.production_id=${production_id}`
+            WHERE production_assignments.production_id=${production_id} AND production_assignments.status='active'`
         );
 
         return result;
@@ -324,7 +335,7 @@ export class ApisRepository implements IApisRepository {
         //const data = user.toPersistence();
 
         const [result] = await this.db.query<RowDataPacket[]>(
-            `SELECT * FROM report_actions`
+            `SELECT * FROM report_actions ORDER BY timestamp DESC`
         );
 
         return result;
