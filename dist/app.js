@@ -24,7 +24,7 @@ class App {
         this.airtableService = airtableService;
         this.app = (0, express_1.default)();
         this.env = env_1.NODE_ENV || 'development';
-        this.port = env_1.PORT || 3000;
+        this.port = env_1.PORT || 8080;
         this.initializeTrustProxy();
         this.initializeMiddlewares();
         this.initializeRoutes(routes, apiPrefix);

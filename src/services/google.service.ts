@@ -679,8 +679,8 @@ export class GoogleService {
                 }
 
                 await this.googleRepository.updateUser(user_objectz);
-                await this.newReportAction('user-removed', { user_id: user_id }, 
-                    [{ text: `${user.first_name} ${user.last_name} (${user.personal_email})`, type: 'user', id: user_id}]);
+                await this.newReportAction('user-removed', { user_id: user.user_id }, 
+                    [{ text: `${user.first_name} ${user.last_name} (${user.personal_email})`, type: 'user', id: user.user_id}]);
                    
             }
         }

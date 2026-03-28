@@ -52,7 +52,10 @@ class App {
   }
 
   public listen() {
-    const server = this.app.listen(this.port, () => {
+
+    const portNumber = typeof this.port === 'string' ? parseInt(this.port, 10) : this.port;
+
+    const server = this.app.listen(portNumber, '0.0.0.0', () => {
       logger.info(`=================================`);
       logger.info(`======= ENV: ${this.env} =======`);
       logger.info(`🚀 App listening on the port ${this.port}`);

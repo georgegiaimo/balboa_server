@@ -3,11 +3,7 @@ import { existsSync } from 'fs';
 import { resolve } from 'path';
 import { z } from 'zod';
 
-/**
- * 1) dotenv 로드 순서
- *    - .env (공통)
- *    - .env.{NODE_ENV}.local (환경별 override, 있으면 덮어씀)
- */
+
 config(); // .env
 const nodeEnv = process.env.NODE_ENV || 'development';
 const layerPath = resolve(process.cwd(), `.env.${nodeEnv}.local`);
@@ -15,10 +11,7 @@ if (existsSync(layerPath)) {
   config({ path: layerPath });
 }
 
-/**
- * 2) Zod 스키마 정의
- *    - 필수/선택/기본값 정책은 필요에 맞게 수정 가능
- */
+
 const EnvSchema = z
   .object({
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
@@ -43,10 +36,8 @@ const EnvSchema = z
   })
   .strip();
 
-/**
- * 3) 검증(모듈 import 시점에 실행)
- */
-const parsed = EnvSchema.safeParse(process.env);
+
+  const parsed = EnvSchema.safeParse(process.env);
 if (!parsed.success) {
   console.error('\n❌ Invalid environment variables:\n');
   console.error(parsed.error.format());
