@@ -1,6 +1,7 @@
 import { injectable, inject, delay } from 'tsyringe';
 import axios from 'axios';
 import { GoogleRepository, IGoogleRepository } from '@/repositories/google.repository';
+import { CommonService } from './common.service';
 //import { ChatRepository } from '@repositories/chat.repository';
 const { JWT } = require('google-auth-library');
 //const keys = require('../../airtable-integration-471002-dbb2e4afc3d1.json'); // Your downloaded JSON key
@@ -52,7 +53,10 @@ export interface GoogleDirectoryResponse {
 @injectable()
 export class GoogleService {
 
-    constructor(@inject(GoogleRepository) private googleRepository: IGoogleRepository) { }
+    constructor(
+        @inject(GoogleRepository) private googleRepository: IGoogleRepository,
+        @inject(CommonService) public commonService: CommonService
+    ) { }
 
     public async getAccessToken(domain_keys:any, subject_email:string) {
 
@@ -63,7 +67,8 @@ export class GoogleService {
             subject: subject_email,//'admin@crew-tv.com',
             scopes: [
                 'https://www.googleapis.com/auth/admin.directory.user.readonly',
-                'https://www.googleapis.com/auth/admin.directory.orgunit'
+                'https://www.googleapis.com/auth/admin.directory.orgunit',
+                'https://www.googleapis.com/auth/admin.directory.user'
             ],
         });
 
@@ -609,6 +614,16 @@ export class GoogleService {
                     personal_email: user_gg.emails[0] ? user_gg.emails[0].address : '',
                 }
 
+                //check if there is a record of new user, attach notes to record
+                var new_user_recordx = await this.googleRepository.getNewUser(user_object.personal_email);
+                var new_user_record = new_user_recordx[0];
+
+                if (new_user_record) {
+                    user_object.notes = new_user_record.notes;
+                    user_object.is_identity_client = new_user_record.is_identity_client
+                }
+
+
                 console.log('adding new user', user_object.first_name, user_object.last_name);
                 var user_id = await this.googleRepository.addUser(user_object);
                 user_object.user_id = user_id;
@@ -848,34 +863,6 @@ export class GoogleService {
         await this.googleRepository.addReportAction(object);
     }
 
-    async deleteGoogleUser(googleUserId: string, accessToken: string): Promise<void> {
-
-        var access_token = await this.getAccessToken(keys, 'admin@crew-tv.com');
-
-        const url = `https://admin.googleapis.com/admin/directory/v1/users/${googleUserId}`;
-
-        try {
-            const response = await axios.delete(url, {
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`,
-                    'Accept': 'application/json',
-                },
-            });
-
-            if (response.status === 204 || response.status === 200) {
-                console.log(`Successfully deleted user: ${googleUserId}`);
-            }
-        } catch (error: any) {
-            // Handle specific Google API errors
-            if (error.response) {
-                console.error('Error deleting user:', error.response.data.error.message);
-                throw new Error(`Google API Error: ${error.response.data.error.code}`);
-            } else {
-                console.error('Network or setup error:', error.message);
-                throw error;
-            }
-        }
-    }
 
     async syncGoogleData(){
         console.log('------------------- Starting ---------------');
@@ -883,6 +870,7 @@ export class GoogleService {
         console.log('Finished sync productions...');
         await this.syncUsers();
         console.log('Finished sync users...');
+        return;
     }
 
     getLevenshteinDistance(a: string, b: string): number {
@@ -935,8 +923,204 @@ export class GoogleService {
         });
         console.log('finished');
         
-        
     }
+
+    async addUserToGoogle(user_data: any) {
+
+        //get access token
+        var access_token;
+        if (user_data.domain == 'crew-tv'){
+            access_token = await this.getAccessToken(keys, 'admin@crew-tv.com');
+        }
+        else if (user_data.domain == 'mount22prod' || user_data.domain == 'seriescrew'){
+            access_token = await this.getAccessToken(keys2, 'admin@mount22prod.com');
+        }
+        else return;
+
+        console.log('access_token', access_token, user_data.domain);
+
+        //create a temp password
+        var password = this.commonService.createPassword();
+
+        // Google Admin SDK Directory API Endpoint
+        const url = 'https://admin.googleapis.com/admin/directory/v1/users';
+
+        const body = {
+            primaryEmail: `${user_data.first_name}.${user_data.last_name}@${user_data.domain}.com`.toLowerCase(),
+            name: {
+                givenName: user_data.first_name,
+                familyName: user_data.last_name,
+            },
+            password: password,
+            orgUnitPath: user_data.org_unit_path,
+            // Recommended: force a password change for new staffers/applicants
+            changePasswordAtNextLogin: true,
+            // Adding the personal email here
+            emails: [
+                {
+                    address: user_data.personal_email, // e.g., "jsmith123@gmail.com"
+                    type: 'home',                    // Labels it as a personal/home email
+                    primary: false                   // Ensure the Workspace email remains the primary
+                }
+            ]
+        };
+
+        console.log('body', body);
+
+        try {
+            const response = await axios.post(url, body, {
+                headers: {
+                    'Authorization': `Bearer ${access_token}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            console.log('✅ User successfully created in Google Directory:', response.data.primaryEmail);
+
+            //save new user in database
+            var object = {
+                first_name: user_data.first_name,
+                last_name: user_data.last_name,
+                production_email: body.primaryEmail,
+                personal_email: user_data.personal_email, 
+                timestamp_created: Date.now(),
+                temporary_password: password,
+                org_unit_path: user_data.org_unit_path,
+                domain: user_data.domain,
+                notes: user_data.notes,
+                is_identity_client: user_data.is_identity_client
+            }
+
+            await this.googleRepository.saveNewUser(object);
+
+            return response.data;
+        } catch (error: any) {
+            // Detailed error logging for Google API responses
+            const errorDetail = error.response?.data?.error || error.message;
+            console.error('❌ Failed to create Google User:', errorDetail);
+            throw errorDetail;
+        }
+    }
+
+    async deleteUserInGoogle(user_data:any) {
+
+    console.log('delete user in google', user_data);
+
+    //determine domain
+    var domain;
+    if (user_data.production_email.indexOf('crew-tv') > -1) domain = 'crew-tv';
+    else if (user_data.production_email.indexOf('mount22prod') > -1) domain = 'mount22prod';
+    else if (user_data.production_email.indexOf('seriescrew') > -1) domain = 'seriescrew';
+    else return;
+
+    //get access token
+        var access_token;
+        if (domain == 'crew-tv'){
+            access_token = await this.getAccessToken(keys, 'admin@crew-tv.com');
+        }
+        else if (domain == 'mount22prod' || domain == 'seriescrew'){
+            access_token = await this.getAccessToken(keys2, 'admin@mount22prod.com');
+        }
+        else return;
+
+        console.log('access_token', access_token, user_data.domain);
+
+  // Endpoint follows the pattern: /admin/directory/v1/users/{userKey}
+  // {userKey} can be the primary email or the unique Google ID.
+  const url = `https://admin.googleapis.com/admin/directory/v1/users/${user_data.google_id}`;
+
+  try {
+    const response = await axios.delete(url, {
+      headers: {
+        'Authorization': `Bearer ${access_token}`,
+        'Accept': 'application/json',
+      },
+    });
+
+    // Google returns a 204 No Content status on a successful deletion.
+    if (response.status === 204) {
+      console.log(`✅ Successfully deleted Google User ID: ${user_data.google_id}`);
+      return true;
+    }
+  } catch (error: any) {
+    const errorDetail = error.response?.data?.error || error.message;
+    
+    // Check for common deletion errors
+    if (error.response?.status === 404) {
+      console.error(`❌ User ID ${user_data.google_id} not found in the directory.`);
+    } else {
+      console.error('❌ Failed to delete Google User:', errorDetail);
+    }
+    
+    throw errorDetail;
+  }
+}
+
+async updateUserInGoogle(user_data:any) {
+
+console.log('update user in google', user_data);
+
+    //determine domain
+    var domain;
+    if (user_data.production_email.indexOf('crew-tv') > -1) domain = 'crew-tv';
+    else if (user_data.production_email.indexOf('mount22prod') > -1) domain = 'mount22prod';
+    else if (user_data.production_email.indexOf('seriescrew') > -1) domain = 'seriescrew';
+    else return;
+
+    //get access token
+    var access_token;
+    if (domain == 'crew-tv') {
+        access_token = await this.getAccessToken(keys, 'admin@crew-tv.com');
+    }
+    else if (domain == 'mount22prod' || domain == 'seriescrew') {
+        access_token = await this.getAccessToken(keys2, 'admin@mount22prod.com');
+    }
+    else return;
+
+    console.log('access_token', access_token, domain);
+
+
+  const url = `https://admin.googleapis.com/admin/directory/v1/users/${user_data.google_id}`;
+
+  // Mapping the input to the Google Schema
+  const body: any = {};
+
+  //if (updateData.firstName || updateData.lastName) {
+    body.name = {
+      givenName: user_data.first_name,
+      familyName: user_data.last_name
+    };
+  //}
+
+  //if (updateData.orgUnitPath) body.orgUnitPath = updateData.orgUnitPath;
+  //if (updateData.suspended !== undefined) body.suspended = updateData.suspended;
+  
+  //if (updateData.personalEmail) {
+    body.emails = [
+      {
+        address: user_data.personal_email,
+        type: 'home',
+        primary: false
+      }
+    ];
+  //}
+
+  try {
+    const response = await axios.patch(url, body, {
+      headers: {
+        'Authorization': `Bearer ${access_token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log(`✅ User ${user_data.google_id} updated successfully.`);
+    return response.data;
+  } catch (error: any) {
+    const errorDetail = error.response?.data?.error || error.message;
+    console.error('❌ Failed to update Google User:', errorDetail);
+    throw errorDetail;
+  }
+}
 
 
 }

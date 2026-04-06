@@ -1,4 +1,4 @@
-export declare const NODE_ENV: "development" | "production" | "test";
+export declare const ENVIRONMENT: "development" | "production" | "test";
 export declare const PORT: number | undefined;
 export declare const SECRET_KEY: string;
 export declare const LOG_FORMAT: string | undefined;

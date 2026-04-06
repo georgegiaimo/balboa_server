@@ -60,6 +60,11 @@ let ApisRepository = class ApisRepository {
         const header = result;
         return header.affectedRows > 0 ? header.insertId : undefined;
     }
+    async updateCoordinator(object) {
+        //const data = user.toPersistence();
+        const [result] = await this.db.query(`UPDATE coordinators SET ? WHERE coordinator_id = ${object.coordinator_id}`, [object]);
+        return result;
+    }
     async addCoordinatorAssignment(object) {
         //const data = user.toPersistence();
         const [result] = await this.db.query(`INSERT coordinator_assignments SET ?`, [object]);
@@ -86,7 +91,7 @@ let ApisRepository = class ApisRepository {
             users.* 
             FROM production_assignments 
             LEFT JOIN users ON users.user_id=production_assignments.user_id 
-            WHERE production_assignments.production_id=${production_id}`);
+            WHERE production_assignments.production_id=${production_id} AND production_assignments.status='active'`);
         return result;
     }
     async getProductionActivity(production_id) {
@@ -171,7 +176,11 @@ let ApisRepository = class ApisRepository {
     }
     async getReportActions() {
         //const data = user.toPersistence();
-        const [result] = await this.db.query(`SELECT * FROM report_actions`);
+        const [result] = await this.db.query(`SELECT * FROM report_actions ORDER BY timestamp DESC`);
+        return result;
+    }
+    async getGoogleUsers() {
+        const [result] = await this.db.query(`SELECT * FROM google_data_snapshots ORDER BY timestamp DESC LIMIT 1`);
         return result;
     }
 };

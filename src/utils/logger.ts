@@ -1,9 +1,9 @@
 import { existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import pino from 'pino';
-import { LOG_DIR, LOG_LEVEL, NODE_ENV } from '@config/env';
+import { LOG_DIR, LOG_LEVEL, ENVIRONMENT } from '@config/env';
 
-const isProd = NODE_ENV === 'production';
+const isProd = ENVIRONMENT === 'production';
 const logRoot = LOG_DIR || 'logs';
 const logLevel = LOG_LEVEL || 'info';
 

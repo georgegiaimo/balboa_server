@@ -17,10 +17,12 @@ export class ApisRoute implements Routes {
     // We pass the function reference. Controller handles (req, res, next)
     this.router.get(`${this.path}/getProductions`, this.apisController.getProductions);
     this.router.get(`${this.path}/getProductionDetails`, this.apisController.getProductionDetails);
+    this.router.post(`${this.path}/updateProduction`, this.apisController.updateProduction);
     this.router.get(`${this.path}/domainDetails`, this.apisController.getDomainDetails);
     this.router.get(`${this.path}/getUserDetails`, this.apisController.getUserDetails);
     this.router.get(`${this.path}/getDomainDetails`, this.apisController.getDomainDetails);
     this.router.get(`${this.path}/getUsers`, this.apisController.getUsers);
+    this.router.post(`${this.path}/updateUser`, this.apisController.updateUser);
     this.router.get(`${this.path}/getAdmins`, this.apisController.getAdmins);
     //this.router.post(`${this.path}/addAdmin`, this.apisController.addAdmin);
     this.router.get(`${this.path}/getAdmin`, this.apisController.getAdmin);
@@ -42,5 +44,6 @@ export class ApisRoute implements Routes {
     this.router.get(`${this.path}/getSimilarByEmail`, this.apisController.getSimilarByEmail);
     this.router.get(`${this.path}/getSimilarByName`, this.apisController.getSimilarByName);
     this.router.get(`${this.path}/getApproachingOneYear`, this.apisController.getApproachingOneYear);
+    this.router.get(`${this.path}/getGoogleUsers`, this.apisController.getGoogleUsers);
   }
 }

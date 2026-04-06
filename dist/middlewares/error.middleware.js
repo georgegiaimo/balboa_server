@@ -55,7 +55,7 @@ const ErrorMiddleware = (error, req, res, _next) => {
     const maybeData = httpErr.data;
     if (typeof maybeData !== 'undefined')
         body.error.data = maybeData;
-    if (env_1.NODE_ENV === 'development' && stack)
+    if (env_1.ENVIRONMENT === 'development' && stack)
         body.error.stack = stack;
     res.status(status).json(body);
 };

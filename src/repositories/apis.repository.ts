@@ -8,6 +8,7 @@ export interface IApisRepository {
     getProductions(): Promise<any>;
     getProduction(production_id:number): Promise<any>;
     getProductionDetails(production_id:number): Promise<any>;
+    updateProduction(production:any): Promise<any>;
     getProductionAssignments(): Promise<any>;
 
     getCoordinators(): Promise<any>;
@@ -26,6 +27,7 @@ export interface IApisRepository {
 
     getUsers(): Promise<any>;
     getUser(user_id:number): Promise<any>;
+    updateUser(user:any): Promise<any>;
     getUserDetails(user_id:number): Promise<any>;
     getUserAssignments(user_id:number): Promise<any>;
 
@@ -36,6 +38,7 @@ export interface IApisRepository {
     getAdminByEmail(email:string): Promise<any>;
 
     getReportActions(): Promise<any>;
+    getGoogleUsers(): Promise<any>;
     //addProduction(object: any): Promise<any>;
     //updateProduction(object: any): Promise<any>;
     //addProductionAssignment(object: any): Promise<any>;
@@ -87,6 +90,17 @@ export class ApisRepository implements IApisRepository {
 
         const [result] = await this.db.query<RowDataPacket[]>(
             `SELECT * FROM productions WHERE production_id=${production_id}`
+        );
+
+        return result;
+    }
+
+    async updateProduction(object:any): Promise<any> {
+        //const data = user.toPersistence();
+
+        const [result] = await this.db.query<RowDataPacket[]>(
+            `UPDATE productions SET ? WHERE production_id = ${object.production_id}`,
+            [object]
         );
 
         return result;
@@ -220,7 +234,7 @@ export class ApisRepository implements IApisRepository {
 
         const [result] = await this.db.query<RowDataPacket[]>(
             `SELECT 
-            production_assignments.production_assignment_id, production_assignments.user_id, production_assignments.status AS assignment_status,
+            production_assignments.production_assignment_id, production_assignments.user_id, production_assignments.status AS assignment_status, production_assignments.created_timestamp, production_assignments.ended_timestamp,
             productions.*
             FROM production_assignments 
             LEFT JOIN productions ON productions.production_id=production_assignments.production_id 
@@ -235,6 +249,17 @@ export class ApisRepository implements IApisRepository {
 
         const [result] = await this.db.query<RowDataPacket[]>(
             `SELECT * FROM users`
+        );
+
+        return result;
+    }
+
+    async updateUser(object:any): Promise<any> {
+        //const data = user.toPersistence();
+
+        const [result] = await this.db.query<RowDataPacket[]>(
+            `UPDATE users SET ? WHERE user_id = ${object.user_id}`,
+            [object]
         );
 
         return result;
@@ -286,7 +311,7 @@ export class ApisRepository implements IApisRepository {
         //const data = user.toPersistence();
 
         const [result] = await this.db.query<RowDataPacket[]>(
-            `UPDATE admins SET ? WHERE user_id = ${object.user_id}`,
+            `UPDATE admins SET ? WHERE admin_id = ${object.user_id}`,
             [object]
         );
 
@@ -336,6 +361,14 @@ export class ApisRepository implements IApisRepository {
 
         const [result] = await this.db.query<RowDataPacket[]>(
             `SELECT * FROM report_actions ORDER BY timestamp DESC`
+        );
+
+        return result;
+    }
+
+    async getGoogleUsers(): Promise<any> {
+        const [result] = await this.db.query<RowDataPacket[]>(
+            `SELECT * FROM google_data_snapshots ORDER BY timestamp DESC LIMIT 1`
         );
 
         return result;

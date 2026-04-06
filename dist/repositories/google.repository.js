@@ -110,6 +110,16 @@ let GoogleRepository = class GoogleRepository {
         const header = result;
         return header.affectedRows > 0 ? header.insertId : undefined;
     }
+    async getReportActions() {
+        //const data = user.toPersistence();
+        const [result] = await this.db.query(`SELECT * FROM report_actions`);
+        return result;
+    }
+    async deleteReportAction(report_action_id) {
+        //const data = user.toPersistence();
+        const [result] = await this.db.query(`DELETE FROM report_actions WHERE report_action_id=${report_action_id}`);
+        return result;
+    }
 };
 exports.GoogleRepository = GoogleRepository;
 exports.GoogleRepository = GoogleRepository = __decorate([

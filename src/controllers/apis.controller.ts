@@ -34,6 +34,20 @@ export class ApisController {
         }
     };
 
+    public updateProduction = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const data = req.body;
+
+            // Controller calls the service
+            const result = await this.apisService.updateProduction(data);
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
     public getUserDetails = async (req: Request, res: Response, next: NextFunction) => {
         try {
 
@@ -53,6 +67,20 @@ export class ApisController {
 
             // Controller calls the service
             const result = await this.apisService.getUsers();
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
+    public updateUser = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const data = req.body;
+
+            // Controller calls the service
+            const result = await this.apisService.updateUser(data);
 
             // Controller sends the final response
             res.status(200).json({ data: result, message: 'success' });
@@ -364,6 +392,19 @@ export class ApisController {
         try {
             // Controller calls the service
             const result = await this.apisService.getApproachingOneYear();
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
+    public getGoogleUsers = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+
+            // Controller calls the service
+            const result = await this.apisService.getGoogleUsers();
 
             // Controller sends the final response
             res.status(200).json({ data: result, message: 'success' });

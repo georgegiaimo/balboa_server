@@ -5,7 +5,7 @@ import { z } from 'zod';
 
 
 config(); // .env
-const nodeEnv = process.env.NODE_ENV || 'development';
+const nodeEnv = process.env.ENVIRONMENT || 'development';
 const layerPath = resolve(process.cwd(), `.env.${nodeEnv}.local`);
 if (existsSync(layerPath)) {
   config({ path: layerPath });
@@ -14,17 +14,17 @@ if (existsSync(layerPath)) {
 
 const EnvSchema = z
   .object({
-    NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-    PORT: z.coerce.number().int().positive().optional(), // 기본값은 app.ts에서 3000 처리
+    ENVIRONMENT: z.enum(['development', 'production', 'test']).default('development'),
+    PORT: z.coerce.number().int().positive().optional(), 
 
     SECRET_KEY: z.string().min(1),
 
-    LOG_FORMAT: z.string().min(1).optional(), // 기본값은 app.ts에서 'dev'
+    LOG_FORMAT: z.string().min(1).optional(), 
     LOG_DIR: z.string().min(1),
     LOG_LEVEL: z.string().min(1),
 
-    ORIGIN: z.string().min(1), // 필요시 배열화 가능
-    CREDENTIALS: z.coerce.boolean(), // 'true'/'false' 문자열 → boolean
+    ORIGIN: z.string().min(1), 
+    CREDENTIALS: z.coerce.boolean(), 
     CORS_ORIGINS: z.string().optional(), // "http://a.com,http://b.com"
 
     API_SERVER_URL: z.string().url().optional(),
@@ -45,7 +45,7 @@ if (!parsed.success) {
 }
 const env = parsed.data;
 
-export const NODE_ENV = env.NODE_ENV;
+export const ENVIRONMENT = env.ENVIRONMENT;
 export const PORT = env.PORT; 
 export const SECRET_KEY = env.SECRET_KEY;
 

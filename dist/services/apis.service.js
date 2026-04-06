@@ -103,6 +103,7 @@ let ApisService = class ApisService {
             });
             user.productions = productionsx;
             user.last_login_date = this.commonService.getDate(user.last_login_time);
+            user.creation_date = this.commonService.getDate(user.creation_time);
         });
         //console.log('users', users);
         return users;
@@ -213,10 +214,23 @@ let ApisService = class ApisService {
             last_name: data.last_name,
             email: data.email,
             created_timestamp: Date.now(),
-            notes: data.notes
+            notes: data.notes,
+            is_executive: data.is_executive
         };
         var coordinator_id = this.apisRepository.addCoordinator(coordinator);
         return coordinator_id;
+    }
+    async updateCoordinator(data) {
+        var coordinator = {
+            coordinator_id: data.coordinator_id,
+            first_name: data.first_name,
+            last_name: data.last_name,
+            email: data.email,
+            notes: data.notes,
+            is_executive: data.is_executive
+        };
+        var result = await this.apisRepository.updateCoordinator(coordinator);
+        return result;
     }
     async addCoordinatorAssignment(data) {
         var coordinator_assignment = {
@@ -613,6 +627,10 @@ let ApisService = class ApisService {
         // Calculate similarity: 1 - (distance / total length)
         const similarity = 1 - (distance / maxLength);
         return similarity; //>= threshold;
+    }
+    async getGoogleUsers() {
+        var google_users = this.apisRepository.getGoogleUsers();
+        return google_users;
     }
 };
 exports.ApisService = ApisService;

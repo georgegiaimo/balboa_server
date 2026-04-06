@@ -9,6 +9,7 @@ export interface IApisRepository {
     getCoordinatorAssignments(): Promise<any>;
     getCoordinatorAssignment(coordinator_assignment_id: number): Promise<any>;
     addCoordinator(coordinator: any): Promise<any>;
+    updateCoordinator(coordinator: any): Promise<any>;
     addCoordinatorAssignment(coordinator_assignment: any): Promise<any>;
     updateCoordinatorAssignment(coordinator_assignment: any): Promise<any>;
     getAssignmentsByCoordinatorId(coordinator_id: number): Promise<any>;
@@ -24,6 +25,7 @@ export interface IApisRepository {
     getAdmin(admin_id: number): Promise<any>;
     getAdminByEmail(email: string): Promise<any>;
     getReportActions(): Promise<any>;
+    getGoogleUsers(): Promise<any>;
 }
 export declare class ApisRepository implements IApisRepository {
     private db;
@@ -36,6 +38,7 @@ export declare class ApisRepository implements IApisRepository {
     getCoordinatorAssignments(): Promise<any>;
     getCoordinatorAssignment(coordinator_assignment_id: number): Promise<any>;
     addCoordinator(object: any): Promise<any>;
+    updateCoordinator(object: any): Promise<any>;
     addCoordinatorAssignment(object: any): Promise<any>;
     updateCoordinatorAssignment(object: any): Promise<any>;
     getProductionCoordinators(production_id: number): Promise<any>;
@@ -52,4 +55,5 @@ export declare class ApisRepository implements IApisRepository {
     getCoordinator(coordinator_id: number): Promise<any>;
     getAssignmentsByCoordinatorId(coordinator_id: number): Promise<any>;
     getReportActions(): Promise<any>;
+    getGoogleUsers(): Promise<any>;
 }

@@ -4,7 +4,7 @@
   "description": "default template",
   "scripts": {
     "start": "node dist/server.js",
-    "dev": "cross-env NODE_ENV=development nodemon",
+    "dev": "cross-env ENVIRONMENT=development nodemon",
     "dev:watch": "tsx watch src/server.ts",
     "build": "tsc && tsc-alias",
     "lint": "biome lint .",

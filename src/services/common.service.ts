@@ -31,4 +31,13 @@ export class CommonService {
         return token;
     }
 
+    createPassword = () => {
+        var chars = 'abcdefghijklmnopqrstuvwxyz0123456789!@#$%&*';
+        var token = '';
+        for (var i = 0; i < 8; i++) {
+            token += chars.charAt(Math.round(Math.random() * (chars.length - 1)));
+        }
+        return token;
+    }
+
 }

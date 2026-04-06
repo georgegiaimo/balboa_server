@@ -13,6 +13,7 @@ const chat_route_1 = require("./routes/chat.route");
 const system_route_1 = require("./routes/system.route");
 const reports_route_1 = require("./routes/reports.route");
 const apis_route_1 = require("./routes/apis.route");
+const docs_route_1 = require("./routes/docs.route");
 const socket_io_1 = require("socket.io");
 const sockets_1 = require("./sockets"); // Import your logic
 const google_service_1 = require("./services/google.service");
@@ -27,7 +28,8 @@ const routes = [
     tsyringe_1.container.resolve(chat_route_1.ChatRoute),
     tsyringe_1.container.resolve(system_route_1.SystemRoute),
     tsyringe_1.container.resolve(reports_route_1.ReportsRoute),
-    tsyringe_1.container.resolve(apis_route_1.ApisRoute)
+    tsyringe_1.container.resolve(apis_route_1.ApisRoute),
+    tsyringe_1.container.resolve(docs_route_1.DocsRoute),
 ];
 var googleRepository = new google_repository_1.GoogleRepository(database_config_1.pool);
 const googleService = new google_service_1.GoogleService(googleRepository);

@@ -2,13 +2,15 @@ import cron from 'node-cron';
 import { GoogleService } from '../services/google.service';
 import { GoogleRepository } from '../repositories/google.repository'; // Import the missing piece
 import { pool } from '../database.config';
+import { CommonService } from '@/services/common.service';
 
 
 // 1. Create the repository
 const googleRepository = new GoogleRepository(pool);
 
+var commonService = new CommonService;
 // 2. Create the service by passing the repository into the constructor
-const googleService = new GoogleService(googleRepository);
+const googleService = new GoogleService(googleRepository, commonService);
 
 // It's best practice to wrap the job in a function or class
 export const initGoogleSync = () => {

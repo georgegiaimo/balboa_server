@@ -1,35 +1,26 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CORS_ORIGIN_LIST = exports.AIRTABLE_PERSONAL_ACCESS_TOKEN = exports.GEMINI_API_KEY = exports.API_SERVER_URL = exports.REDIS_URL = exports.SENTRY_DSN = exports.CREDENTIALS = exports.ORIGIN = exports.LOG_LEVEL = exports.LOG_DIR = exports.LOG_FORMAT = exports.SECRET_KEY = exports.PORT = exports.NODE_ENV = void 0;
+exports.CORS_ORIGIN_LIST = exports.AIRTABLE_PERSONAL_ACCESS_TOKEN = exports.GEMINI_API_KEY = exports.API_SERVER_URL = exports.REDIS_URL = exports.SENTRY_DSN = exports.CREDENTIALS = exports.ORIGIN = exports.LOG_LEVEL = exports.LOG_DIR = exports.LOG_FORMAT = exports.SECRET_KEY = exports.PORT = exports.ENVIRONMENT = void 0;
 const dotenv_1 = require("dotenv");
 const fs_1 = require("fs");
 const path_1 = require("path");
 const zod_1 = require("zod");
-/**
- * 1) dotenv 로드 순서
- *    - .env (공통)
- *    - .env.{NODE_ENV}.local (환경별 override, 있으면 덮어씀)
- */
 (0, dotenv_1.config)(); // .env
-const nodeEnv = process.env.NODE_ENV || 'development';
+const nodeEnv = process.env.ENVIRONMENT || 'development';
 const layerPath = (0, path_1.resolve)(process.cwd(), `.env.${nodeEnv}.local`);
 if ((0, fs_1.existsSync)(layerPath)) {
     (0, dotenv_1.config)({ path: layerPath });
 }
-/**
- * 2) Zod 스키마 정의
- *    - 필수/선택/기본값 정책은 필요에 맞게 수정 가능
- */
 const EnvSchema = zod_1.z
     .object({
-    NODE_ENV: zod_1.z.enum(['development', 'production', 'test']).default('development'),
-    PORT: zod_1.z.coerce.number().int().positive().optional(), // 기본값은 app.ts에서 3000 처리
+    ENVIRONMENT: zod_1.z.enum(['development', 'production', 'test']).default('development'),
+    PORT: zod_1.z.coerce.number().int().positive().optional(),
     SECRET_KEY: zod_1.z.string().min(1),
-    LOG_FORMAT: zod_1.z.string().min(1).optional(), // 기본값은 app.ts에서 'dev'
+    LOG_FORMAT: zod_1.z.string().min(1).optional(),
     LOG_DIR: zod_1.z.string().min(1),
     LOG_LEVEL: zod_1.z.string().min(1),
-    ORIGIN: zod_1.z.string().min(1), // 필요시 배열화 가능
-    CREDENTIALS: zod_1.z.coerce.boolean(), // 'true'/'false' 문자열 → boolean
+    ORIGIN: zod_1.z.string().min(1),
+    CREDENTIALS: zod_1.z.coerce.boolean(),
     CORS_ORIGINS: zod_1.z.string().optional(), // "http://a.com,http://b.com"
     API_SERVER_URL: zod_1.z.string().url().optional(),
     SENTRY_DSN: zod_1.z.string().default(''),
@@ -38,9 +29,6 @@ const EnvSchema = zod_1.z
     AIRTABLE_PERSONAL_ACCESS_TOKEN: zod_1.z.string()
 })
     .strip();
-/**
- * 3) 검증(모듈 import 시점에 실행)
- */
 const parsed = EnvSchema.safeParse(process.env);
 if (!parsed.success) {
     console.error('\n❌ Invalid environment variables:\n');
@@ -48,7 +36,7 @@ if (!parsed.success) {
     process.exit(1);
 }
 const env = parsed.data;
-exports.NODE_ENV = env.NODE_ENV;
+exports.ENVIRONMENT = env.ENVIRONMENT;
 exports.PORT = env.PORT;
 exports.SECRET_KEY = env.SECRET_KEY;
 exports.LOG_FORMAT = env.LOG_FORMAT;

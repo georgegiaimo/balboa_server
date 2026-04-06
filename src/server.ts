@@ -18,6 +18,8 @@ import { GoogleRepository, type IGoogleRepository } from '@repositories/google.r
 import { AirtableService } from '@services/airtable.service';
 import { AirtableRepository, type IAirtableRepository } from '@repositories/airtable.repository';
 import { pool } from './database.config';
+import { CommonService } from './services/common.service';
+import { GoogleRoute } from './routes/google.route';
 
 //container.registerInstance(UsersRepository, new UsersRepository());
 
@@ -29,10 +31,12 @@ const routes = [
   container.resolve(ReportsRoute),
   container.resolve(ApisRoute),
   container.resolve(DocsRoute),
+  container.resolve(GoogleRoute)
 ];
 
+var commonService = new CommonService;
 var googleRepository = new GoogleRepository(pool);
-const googleService = new GoogleService(googleRepository);
+const googleService = new GoogleService(googleRepository, commonService);
 
 var airtableRepository = new AirtableRepository(pool);
 const airtableService = new AirtableService(airtableRepository);

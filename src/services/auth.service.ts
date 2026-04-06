@@ -1,6 +1,6 @@
 import { sign } from 'jsonwebtoken';
 import { injectable, inject } from 'tsyringe';
-import { NODE_ENV, SECRET_KEY } from '@config/env';
+import { ENVIRONMENT, SECRET_KEY } from '@config/env';
 import { HttpException } from '@exceptions/httpException';
 import { DataStoredInToken, TokenData } from '@interfaces/auth.interface';
 import { User, type UserCreateData } from '@entities/user.entity';
@@ -34,7 +34,7 @@ export class AuthService {
 
   private createCookie(tokenData: TokenData): string {
     return `Authorization=${tokenData.token}; HttpOnly; Max-Age=${tokenData.expiresIn
-      }; Path=/; SameSite=Lax;${NODE_ENV === 'production' ? ' Secure;' : ''}`;
+      }; Path=/; SameSite=Lax;${ENVIRONMENT === 'production' ? ' Secure;' : ''}`;
   }
 
   public async signup(user_data: any): Promise<User> {

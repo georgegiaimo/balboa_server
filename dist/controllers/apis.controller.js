@@ -201,6 +201,18 @@ let ApisController = class ApisController {
                 next(error); // Pass to global error handler
             }
         };
+        this.updateCoordinator = async (req, res, next) => {
+            try {
+                var data = req.body;
+                // Controller calls the service
+                const result = await this.apisService.updateCoordinator(data);
+                // Controller sends the final response
+                res.status(200).json({ data: result, message: 'success' });
+            }
+            catch (error) {
+                next(error); // Pass to global error handler
+            }
+        };
         this.addCoordinatorAssignment = async (req, res, next) => {
             try {
                 var data = req.body;
@@ -317,6 +329,17 @@ let ApisController = class ApisController {
             try {
                 // Controller calls the service
                 const result = await this.apisService.getApproachingOneYear();
+                // Controller sends the final response
+                res.status(200).json({ data: result, message: 'success' });
+            }
+            catch (error) {
+                next(error); // Pass to global error handler
+            }
+        };
+        this.getGoogleUsers = async (req, res, next) => {
+            try {
+                // Controller calls the service
+                const result = await this.apisService.getGoogleUsers();
                 // Controller sends the final response
                 res.status(200).json({ data: result, message: 'success' });
             }

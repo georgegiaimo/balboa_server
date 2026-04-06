@@ -8,7 +8,7 @@ const fs_1 = require("fs");
 const path_1 = require("path");
 const pino_1 = __importDefault(require("pino"));
 const env_1 = require("../config/env");
-const isProd = env_1.NODE_ENV === 'production';
+const isProd = env_1.ENVIRONMENT === 'production';
 const logRoot = env_1.LOG_DIR || 'logs';
 const logLevel = env_1.LOG_LEVEL || 'info';
 const projectRoot = process.cwd(); // 현재 프로세스 실행 디렉토리

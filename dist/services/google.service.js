@@ -453,13 +453,15 @@ let GoogleService = class GoogleService {
             });
             if (record) {
                 //update last login time if different
-                if (record.last_login_time != new Date(user_gg.lastLoginTime).getTime() || record.status != 'active') {
-                    var user_objectx = {
-                        user_id: record.user_id,
-                        last_login_time: new Date(user_gg.lastLoginTime).getTime(),
-                        status: 'active'
-                    };
-                    await this.googleRepository.updateUser(user_objectx);
+                if (user_gg.lastLoginTime) {
+                    if (record.last_login_time != new Date(user_gg.lastLoginTime).getTime() || record.status != 'active') {
+                        var user_objectx = {
+                            user_id: record.user_id,
+                            last_login_time: new Date(user_gg.lastLoginTime).getTime(),
+                            status: 'active'
+                        };
+                        await this.googleRepository.updateUser(user_objectx);
+                    }
                 }
                 //check assignment
                 var assignments = await this.googleRepository.getUserAssignments(record.user_id);
@@ -574,17 +576,18 @@ let GoogleService = class GoogleService {
                     status: 'removed'
                 };
                 await this.googleRepository.updateUser(user_objectz);
-                await this.newReportAction('user-removed', { user_id: user_id }, [{ text: `${user.first_name} ${user.last_name} (${user.personal_email})`, type: 'user', id: user_id }]);
+                await this.newReportAction('user-removed', { user_id: user.user_id }, [{ text: `${user.first_name} ${user.last_name} (${user.personal_email})`, type: 'user', id: user.user_id }]);
             }
         }
         //store historical data
         var historical_data_object = {
             users: google_users.length,
-            productions: google_org_units.length,
+            productions: productions.filter((x) => { return x.status ? x.status.toLowerCase() == 'active' : false; }).length,
             timestamp: Date.now()
         };
         await this.googleRepository.addHistoricalData(historical_data_object);
-        //await this.deleteDuplicateAssignments();
+        await this.deleteDuplicateAssignments();
+        await this.deleteDuplicateReportActions();
     }
     async addNewProductionAssignment(production, user) {
         if (production) {
@@ -626,7 +629,7 @@ let GoogleService = class GoogleService {
         var ctr = 0;
         assignments.forEach((x, i) => {
             assignments.forEach((y, j) => {
-                if (x.production_id == y.production_id && x.user_id == y.user_id) {
+                if (x.production_id == y.production_id && x.user_id == y.user_id && j > i) {
                     ctr += 1;
                     var delete_id = -1;
                     if (y.status == 'active')
@@ -642,12 +645,33 @@ let GoogleService = class GoogleService {
             });
         });
         console.log('duplicated_assignments', duplicated_assignments.length);
-        /*
-        for (let id of duplicated_assignments){
+        for (let id of duplicated_assignments) {
             await this.googleRepository.deleteProductionAssignment(id);
-            console.log('deleting duplicate...')
+            console.log('deleting duplicate...');
         }
-        */
+        console.log('finished...');
+    }
+    async deleteDuplicateReportActions() {
+        //delete duplicated assignments --- temp until fixed ----
+        var activity = await this.googleRepository.getReportActions();
+        var duplicated_activity_ids = [];
+        activity.forEach((x, i) => {
+            activity.forEach((y, j) => {
+                if (x.action == y.action && x.user_id == y.user_id && x.user_id != null && x.production_id == y.production_id && x.production_id != null && j > i) {
+                    console.log('dups', x, y);
+                    console.log('duplicated_activity_ids', duplicated_activity_ids);
+                    if (duplicated_activity_ids.indexOf(y.report_action_id) == -1) {
+                        duplicated_activity_ids.push(y.report_action_id);
+                    }
+                }
+            });
+        });
+        console.log('activity.length', activity.length);
+        console.log('duplicated_activity.length', duplicated_activity_ids.length);
+        for (let id of duplicated_activity_ids) {
+            await this.googleRepository.deleteReportAction(id);
+            console.log('deleting duplicate...');
+        }
         console.log('finished...');
     }
     async newReportAction(action, ids, params) {

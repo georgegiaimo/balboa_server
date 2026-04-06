@@ -42,7 +42,7 @@ let AuthService = class AuthService {
         return { expiresIn, token };
     }
     createCookie(tokenData) {
-        return `Authorization=${tokenData.token}; HttpOnly; Max-Age=${tokenData.expiresIn}; Path=/; SameSite=Lax;${env_1.NODE_ENV === 'production' ? ' Secure;' : ''}`;
+        return `Authorization=${tokenData.token}; HttpOnly; Max-Age=${tokenData.expiresIn}; Path=/; SameSite=Lax;${env_1.ENVIRONMENT === 'production' ? ' Secure;' : ''}`;
     }
     async signup(user_data) {
         var userx = await this.usersRepository.findByEmail(user_data.email);

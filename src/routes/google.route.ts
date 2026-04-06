@@ -16,5 +16,10 @@ export class GoogleRoute implements Routes {
   private initializeRoutes() {
     // We pass the function reference. Controller handles (req, res, next)
     //this.router.get(`${this.path}/getUsersFromDirectory`, this.googleController.getUsersFromDirectory);
+    
+    this.router.post(`${this.path}/addUserToGoogle`, this.googleController.addUserToGoogle);
+    this.router.post(`${this.path}/updateUserInGoogle`, this.googleController.updateUserInGoogle);
+    this.router.post(`${this.path}/deleteUserInGoogle`, this.googleController.deleteUserInGoogle);
+    this.router.get(`${this.path}/syncData`, this.googleController.syncData);
   }
 }

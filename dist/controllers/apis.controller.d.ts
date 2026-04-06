@@ -16,6 +16,7 @@ export declare class ApisController {
     getCoordinatorDetails: (req: Request, res: Response, next: NextFunction) => Promise<void>;
     getCoordinatorAssignment: (req: Request, res: Response, next: NextFunction) => Promise<void>;
     addCoordinator: (req: Request, res: Response, next: NextFunction) => Promise<void>;
+    updateCoordinator: (req: Request, res: Response, next: NextFunction) => Promise<void>;
     addCoordinatorAssignment: (req: Request, res: Response, next: NextFunction) => Promise<void>;
     updateCoordinatorAssignment: (req: Request, res: Response, next: NextFunction) => Promise<void>;
     getHealth: (req: Request, res: Response, next: NextFunction) => Promise<void>;
@@ -27,4 +28,5 @@ export declare class ApisController {
     getSimilarByEmail: (req: Request, res: Response, next: NextFunction) => Promise<void>;
     getSimilarByName: (req: Request, res: Response, next: NextFunction) => Promise<void>;
     getApproachingOneYear: (req: Request, res: Response, next: NextFunction) => Promise<void>;
+    getGoogleUsers: (req: Request, res: Response, next: NextFunction) => Promise<void>;
 }

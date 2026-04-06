@@ -24,6 +24,9 @@ export interface IGoogleRepository {
     addReportAction(object:any): Promise<any>;
     getReportActions(): Promise<any>;
     deleteReportAction(id:number): Promise<any>;
+
+    saveNewUser(data:any): Promise<any>;
+    getNewUser(email:string): Promise<any>;
   //findById(id: string): Promise<User | undefined>;
   //findByEmail(email: string): Promise<User | undefined>;
   //save(user: User): Promise<User>;
@@ -227,6 +230,29 @@ export class GoogleRepository implements IGoogleRepository {
 
         return result;
     }
+
+    async saveNewUser(object: any): Promise<any> {
+        //const data = user.toPersistence();
+
+        const [result] = await this.db.query<ResultSetHeader>(
+            `INSERT added_users SET ?`,
+            [object]
+        );
+
+        const header = result as ResultSetHeader;
+        return header.affectedRows > 0 ? header.insertId : undefined;
+    }
+
+    async getNewUser(email:string): Promise<any> {
+        //const data = user.toPersistence();
+
+        const [result] = await this.db.query<RowDataPacket[]>(
+            `SELECT * FROM added_users WHERE personal_email='${email}'`
+        );
+
+        return result;
+    }
+
 
     
 }

@@ -27,6 +27,7 @@ export declare class ApisService {
     updateAdmin(object: any): Promise<any>;
     getCoordinators(): Promise<any>;
     addCoordinator(data: any): Promise<any>;
+    updateCoordinator(data: any): Promise<any>;
     addCoordinatorAssignment(data: any): Promise<any>;
     updateCoordinatorAssignment(data: any): Promise<any>;
     getCoordinatorDetails(coordinator_id: number): Promise<{
@@ -56,4 +57,5 @@ export declare class ApisService {
     getApproachingOneYear(): Promise<any>;
     getLevenshteinDistance(a: string, b: string): number;
     getSimilarity(str1: string, str2: string, threshold?: number): number;
+    getGoogleUsers(): Promise<any>;
 }

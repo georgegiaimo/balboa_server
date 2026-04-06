@@ -6,7 +6,7 @@ import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import hpp from 'hpp';
 import morgan from 'morgan';
-import { NODE_ENV, PORT, LOG_FORMAT, CREDENTIALS } from '@config/env';
+import { ENVIRONMENT, PORT, LOG_FORMAT, CREDENTIALS } from '@config/env';
 
 import 'reflect-metadata'; // Must be first
 import './database.config';
@@ -33,7 +33,7 @@ class App {
     public airtableService: AirtableService,
   ) {
     this.app = express();
-    this.env = NODE_ENV || 'development';
+    this.env = ENVIRONMENT || 'development';
     this.port = PORT || 3000;
 
     this.initializeTrustProxy();
@@ -58,9 +58,10 @@ class App {
     const server = this.app.listen(portNumber, '0.0.0.0', () => {
       logger.info(`=================================`);
       logger.info(`======= ENV: ${this.env} =======`);
-      logger.info(`🚀 App listening on the port ${this.port}`);
+      logger.info(`🚀 App listening on the port ${this.port} from the docker container!`);
       logger.info(`=================================`);
 
+      console.log('Running on environment: ', this.env.toUpperCase());
       initializeCronJobs();
 
     });

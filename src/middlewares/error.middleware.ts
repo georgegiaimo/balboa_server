@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken';
 import { ZodError } from 'zod';
-import { NODE_ENV } from '@config/env';
+import { ENVIRONMENT } from '@config/env';
 import { HttpException } from '@exceptions/httpException';
 import { logger } from '@utils/logger';
 
@@ -83,7 +83,7 @@ export const ErrorMiddleware = (
 
   const maybeData = (httpErr as HttpExceptionWithData).data;
   if (typeof maybeData !== 'undefined') body.error.data = maybeData;
-  if (NODE_ENV === 'development' && stack) body.error.stack = stack;
+  if (ENVIRONMENT === 'development' && stack) body.error.stack = stack;
 
   res.status(status).json(body);
 };

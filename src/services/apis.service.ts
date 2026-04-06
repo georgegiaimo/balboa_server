@@ -79,6 +79,12 @@ export class ApisService {
         }
     }
 
+    public async updateProduction(object:any){
+
+        var production_id = await this.apisRepository.updateProduction(object);
+        return production_id;
+    }
+
     public async getUserDetails(user_id:number){
         var userx = await this.apisRepository.getUserDetails(user_id);
         var user = userx[0];
@@ -128,6 +134,12 @@ export class ApisService {
         //console.log('users', users);
 
         return users;
+    }
+
+    public async updateUser(object:any){
+
+        var user_id = await this.apisRepository.updateUser(object);
+        return user_id;
     }
 
     public async getDomainDetails(domain:string){
@@ -552,7 +564,7 @@ export class ApisService {
     }
 
     public async getUnassignedUsers(){
-
+        console.log('here g')
         var users = await this.apisRepository.getUsers();
         var production_assignments = await this.apisRepository.getProductionAssignments();
         
@@ -560,7 +572,7 @@ export class ApisService {
             x.assignments = production_assignments.filter((n:any) => { return n.user_id == x.user_id}).length;
         });
 
-        var unassigned_users = users.filter((x:any) => { return x.assignments == 0});
+        var unassigned_users = users.filter((x:any) => { return x.assignments == 0 && x.status != 'removed'});
 
         unassigned_users.forEach((x:any) => {
             x.name = x.first_name + ' ' + x.last_name;
@@ -756,6 +768,11 @@ export class ApisService {
         const similarity = 1 - (distance / maxLength);
 
         return similarity; //>= threshold;
+    }
+
+    public async getGoogleUsers(){
+        var google_users = this.apisRepository.getGoogleUsers();
+        return google_users;
     }
     
 }

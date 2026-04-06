@@ -23,8 +23,8 @@ class App {
         this.googleService = googleService;
         this.airtableService = airtableService;
         this.app = (0, express_1.default)();
-        this.env = env_1.NODE_ENV || 'development';
-        this.port = env_1.PORT || 8080;
+        this.env = env_1.ENVIRONMENT || 'development';
+        this.port = env_1.PORT || 3000;
         this.initializeTrustProxy();
         this.initializeMiddlewares();
         this.initializeRoutes(routes, apiPrefix);
@@ -35,14 +35,17 @@ class App {
         //this.googleService.syncGoogleData();
         //this.googleService.temp();
         //this.googleService.deleteDuplicateAssignments();
+        //this.googleService.deleteDuplicateActivityReport();
         //this.airtableService.getAirtableDataProductions();
     }
     listen() {
-        const server = this.app.listen(this.port, () => {
+        const portNumber = typeof this.port === 'string' ? parseInt(this.port, 10) : this.port;
+        const server = this.app.listen(portNumber, '0.0.0.0', () => {
             logger_1.logger.info(`=================================`);
             logger_1.logger.info(`======= ENV: ${this.env} =======`);
-            logger_1.logger.info(`🚀 App listening on the port ${this.port}`);
+            logger_1.logger.info(`🚀 App listening on the port ${this.port} from the docker container!`);
             logger_1.logger.info(`=================================`);
+            console.log('Running on environment: ', this.env.toUpperCase());
             (0, jobs_1.initializeCronJobs)();
         });
         return server;

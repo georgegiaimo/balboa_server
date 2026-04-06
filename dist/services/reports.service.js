@@ -27,6 +27,7 @@ let ReportsService = class ReportsService {
         var assignments = await this.reportsRepository.getProductionAssignments();
         var productions = await this.reportsRepository.getProductions();
         var historical_data = await this.reportsRepository.getHistoricalData();
+        //productions = productions.filter((x:any) => { return x.status == 'active'});
         //console.log('productions.length', productions.length);
         //console.log('assignments.length', assignments.length);
         //get how many assignments for each production
