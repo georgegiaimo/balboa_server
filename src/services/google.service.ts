@@ -68,7 +68,8 @@ export class GoogleService {
             scopes: [
                 'https://www.googleapis.com/auth/admin.directory.user.readonly',
                 'https://www.googleapis.com/auth/admin.directory.orgunit',
-                'https://www.googleapis.com/auth/admin.directory.user'
+                'https://www.googleapis.com/auth/admin.directory.user',
+                'https://www.googleapis.com/auth/admin.reports.usage.readonly'
             ],
         });
 
@@ -678,7 +679,7 @@ export class GoogleService {
 
                     await this.googleRepository.updateProductionAssignment(objectn);
                     await this.newReportAction('assignment-removed',
-                        { user_id: user_id, production_id: assignment.production_id, production_assignment_id: assignment.production_assignment_id },
+                        { user_id: user.user_id, production_id: assignment.production_id, production_assignment_id: assignment.production_assignment_id },
                         [{ text: `${user.first_name} ${user.last_name} (${user.personal_email})`, type: 'user', id: user.user_id},
                         {text: assignment.name, type: 'production', id: assignment.production_id }]);
                        
@@ -869,6 +870,7 @@ export class GoogleService {
         await this.syncProductions();
         console.log('Finished sync productions...');
         await this.syncUsers();
+        await this.updateUserUsage();
         console.log('Finished sync users...');
         return;
     }
@@ -1120,6 +1122,109 @@ console.log('update user in google', user_data);
     console.error('❌ Failed to update Google User:', errorDetail);
     throw errorDetail;
   }
+}
+
+//get usage date in format: YYYY-MM-DD
+public async getDomainUsageStats(
+  date: string,
+  domain: string
+): Promise<any> {
+
+    //get access token
+    var access_token;
+    if (domain == 'crew-tv') {
+        access_token = await this.getAccessToken(keys, 'admin@crew-tv.com');
+    }
+    else if (domain == 'mount22prod' || domain == 'seriescrew') {
+        access_token = await this.getAccessToken(keys2, 'admin@mount22prod.com');
+    }
+    else return;
+
+    console.log('access_token', access_token, domain);
+  
+  //const url = `https://admin.googleapis.com/admin/reports/v1/usage/dates/${date}`;
+  const url = `https://admin.googleapis.com/admin/reports/v1/usage/users/all/dates/${date}`;
+  
+  try {
+    const response = await axios.get<any>(url, {
+      headers: {
+        'Authorization': `Bearer ${access_token}`,
+        'Accept': 'application/json'
+      },
+      params: {
+        parameters: [
+          'accounts:used_quota_in_mb',
+          'accounts:total_quota_in_mb',
+          'accounts:drive_used_quota_in_mb',
+          'accounts:gmail_used_quota_in_mb'
+        ].join(',')
+      }
+    });
+
+    const allReports = response.data.usageReports || [];
+
+    // Map through the ARRAY of reports to get every user
+    var data =  allReports.map((report:any) => {
+      const stats: Record<string, number> = {};
+      
+      report.parameters.forEach((p:any) => {
+        stats[p.name] = parseInt(p.intValue, 10);
+      });
+
+      return {
+        email: report.entity.userEmail,
+        totalUsedMB: stats['accounts:used_quota_in_mb'],
+        driveUsedMB: stats['accounts:drive_used_quota_in_mb'],
+        gmailUsedMB: stats['accounts:gmail_used_quota_in_mb'],
+        limitMB: stats['accounts:total_quota_in_mb']
+      };
+    });
+
+    console.log('data', data);
+    return data;
+
+  }
+  catch (error: any) {
+    const errorDetail = error.response?.data?.error || error.message;
+    console.error('❌ Failed to fetch report:', errorDetail);
+    throw errorDetail;
+  }
+}
+
+public async updateUserUsage(){
+    console.log('update user storage');
+    var users = await this.googleRepository.getUsers();
+
+    //get date minus 3
+    var date_string = this.commonService.getTodaysDateMinusThree();
+
+    var domains = ['crew-tv', 'mount22prod'];
+
+    var ctr = 0;
+    for (let domain of domains) {
+        //get user usage - crew-tv
+        var usage_crew_tv = await this.getDomainUsageStats(date_string, domain);
+
+        for (let user_data of usage_crew_tv) {
+            //find user to connect data
+            var user = users.find((x: any) => { return x.production_email == user_data.email; });
+
+            if (user) {
+                var user_object: any = {
+                    user_id: user.user_id,
+                    gmail_used_mb: user_data.gmailUsedMB,
+                    drive_used_mb: user_data.driveUsedMB,
+                    total_used_mb: user_data.totalUsedMB,
+                    limit_mb: user_data.limitMB,
+                }
+
+                await this.googleRepository.updateUser(user_object)
+                ctr += 1;
+                console.log('update user', ctr);
+            }
+        }
+
+    }
 }
 
 

@@ -62,6 +62,8 @@ export class ApisService {
         //format date
         users.forEach((x:any) => {
            x.last_login_date = this.commonService.getDate(x.last_login_time);
+           //calculate pct usage
+           x.usage_percentage = Math.round((x.total_used_mb/x.limit_mb)*100);
         });
 
         //remove user duplicates
@@ -97,6 +99,8 @@ export class ApisService {
         });
 
         user.last_login_date = this.commonService.getDate(user.last_login_time);
+        user.creation_date = this.commonService.getDate(user.creation_time);
+        user.usage_percentage = Math.round((user.total_used_mb/user.limit_mb)*100);
 
         return {
             user: user,
@@ -129,6 +133,7 @@ export class ApisService {
             user.productions = productionsx;
             user.last_login_date = this.commonService.getDate(user.last_login_time);
             user.creation_date = this.commonService.getDate(user.creation_time);
+            user.usage_percentage = Math.round((user.total_used_mb/user.limit_mb)*100);
         });
 
         //console.log('users', users);

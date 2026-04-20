@@ -49,6 +49,7 @@ class App {
     //this.googleService.deleteDuplicateAssignments();
     //this.googleService.deleteDuplicateActivityReport();
     //this.airtableService.getAirtableDataProductions();
+    //this.googleService.updateUserUsage();
   }
 
   public listen() {

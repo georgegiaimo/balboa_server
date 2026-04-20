@@ -49,14 +49,15 @@ export class DocsService {
         var activity = data.activity;
         const coordinators = data.coordinators;
 
-
         users.forEach((x: any, i: number) => {
             x.ctr = i + 1;
+            x.usage_percentage = x.usage_percentage != null ? (x.usage_percentage + '%'):'';
+            //console.log('last_login_date', x.last_login_date);
         });
 
         //parse activity texts
         for (let item of activity){
-            if (item.action = 'new-assignment') {
+            if (item.action == 'new-assignment') {
                 var user: any = await this.apisService.getUserDetails(item.user_id);
                 item.text = `${user.user.first_name} ${user.user.last_name} was added to the production.`;
             }
@@ -83,9 +84,6 @@ export class DocsService {
             coordinators: coordinators,
             date: displayDate
         }
-
-
-        console.log('data_for_template', data_for_template.date);
 
         const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
 
@@ -167,7 +165,6 @@ export class DocsService {
     }
 
     private compileTemplate(data: any): string {
-        console.log('data', data.coordinators);
         const templateSource = `
       <!DOCTYPE html>
       <html>
@@ -275,7 +272,8 @@ export class DocsService {
                     <th class="truncate max-w-160"></th>
                     <th class="truncate max-w-140">Name</th>
                     <th class="truncate max-w-180">Production Email</th>
-                    <th class="truncate max-w-180">Personal Email</th>
+                    <th class="truncate max-w-180">Last Login</th>
+                    <th class="truncate max-w-180">Usage</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -284,7 +282,8 @@ export class DocsService {
                     <td class="truncate max-w-160">{{this.ctr}}</td>
                     <td class="truncate max-w-140"><strong>{{this.first_name}}&nbsp;{{this.last_name}}</strong></td>
                     <td class="truncate max-w-180"><span style="color: #64748b;">{{this.production_email}}</span></td>
-                    <td class="truncate max-w-180">{{this.personal_email}}</td>
+                    <td class="truncate max-w-180">{{this.last_login_date}}</td>
+                    <td class="truncate max-w-180">{{ this.usage_percentage }}</td>
                   </tr>
                   {{/each}}
                 </tbody>
@@ -294,6 +293,7 @@ export class DocsService {
         </body>
       </html>
     `;
+    //<td class="truncate max-w-180">{{this.personal_email}}</td>
         const template = handlebars.compile(templateSource);
 
         const final_html = template(data);
