@@ -39,6 +39,15 @@ export interface IApisRepository {
 
     getReportActions(): Promise<any>;
     getGoogleUsers(): Promise<any>;
+
+    addProductionAssignment(production_assignment:any): Promise<any>;
+    updateProductionAssignment(production_assignment:any): Promise<any>;
+    getProductionAssignment(production_assignment_id:number): Promise<any>;
+    deleteProductionAssignment(production_assignment_id:number): Promise <any>;
+
+    getAddedUsers(): Promise<any>;
+    updateAddedUser(user:any): Promise<any>;
+    getAddedUserByEmail(email:string): Promise<any>;
     //addProduction(object: any): Promise<any>;
     //updateProduction(object: any): Promise<any>;
     //addProductionAssignment(object: any): Promise<any>;
@@ -47,6 +56,9 @@ export interface IApisRepository {
     //save(user: User): Promise<User>;
     //update(id: string, user: User): Promise<User | undefined>;
     //delete(id: string): Promise<boolean>;
+    createBulkUploadRun(): Promise<any>;
+    updateBulkUploadRun(object:any): Promise<any>;
+    getBulkUploadRun(run_id:number): Promise<any>;
 }
 
 @singleton()
@@ -234,7 +246,8 @@ export class ApisRepository implements IApisRepository {
 
         const [result] = await this.db.query<RowDataPacket[]>(
             `SELECT 
-            production_assignments.production_assignment_id, production_assignments.user_id, production_assignments.status AS assignment_status, production_assignments.created_timestamp, production_assignments.ended_timestamp,
+            production_assignments.production_assignment_id, production_assignments.user_id, production_assignments.status AS assignment_status, 
+            production_assignments.created_timestamp AS started_timestamp, production_assignments.ended_timestamp,
             productions.*
             FROM production_assignments 
             LEFT JOIN productions ON productions.production_id=production_assignments.production_id 
@@ -322,7 +335,7 @@ export class ApisRepository implements IApisRepository {
         //const data = user.toPersistence();
 
         const [result] = await this.db.query<RowDataPacket[]>(
-            `SELECT admin_id FROM admins WHERE email=${email}`
+            `SELECT admin_id FROM admins WHERE email='${email}'`
         );
 
         return result;
@@ -369,6 +382,117 @@ export class ApisRepository implements IApisRepository {
     async getGoogleUsers(): Promise<any> {
         const [result] = await this.db.query<RowDataPacket[]>(
             `SELECT * FROM google_data_snapshots ORDER BY timestamp DESC LIMIT 1`
+        );
+
+        return result;
+    }
+
+    async addProductionAssignment(object: any): Promise<any> {
+        //const data = user.toPersistence();
+         const [result] = await this.db.query<ResultSetHeader>(
+            `INSERT production_assignments SET ?`,
+            [object]
+        );
+
+        const header = result as ResultSetHeader;
+        return header.affectedRows > 0 ? header.insertId : undefined;
+
+    }
+
+    async updateProductionAssignment(object:any): Promise<any> {
+        //const data = user.toPersistence();
+
+        const [result] = await this.db.query<RowDataPacket[]>(
+            `UPDATE production_assignments SET ? WHERE production_assignment_id = ${object.production_assignment_id}`,
+            [object]
+        );
+
+        return result;
+    }
+
+    async deleteProductionAssignment(production_assignment_id:number): Promise<any> {
+        //const data = user.toPersistence();
+
+         const [result] = await this.db.query<RowDataPacket[]>(
+            `DELETE FROM production_assignments WHERE production_assignment_id=${production_assignment_id}`
+        );
+
+        return result;
+    }
+
+    async getProductionAssignment(production_assignment_id:number): Promise<any> {
+        //const data = user.toPersistence();
+
+        const [result] = await this.db.query<RowDataPacket[]>(
+            `SELECT * FROM production_assignments WHERE production_assignment_id=${production_assignment_id}`
+        );
+
+        return result;
+    }
+
+    async getAddedUsers(): Promise<any> {
+        //const data = user.toPersistence();
+
+        const [result] = await this.db.query<RowDataPacket[]>(
+            `SELECT * FROM added_users`
+        );
+
+        return result;
+    }
+
+    async updateAddedUser(object:any): Promise<any> {
+        //const data = user.toPersistence();
+
+        const [result] = await this.db.query<RowDataPacket[]>(
+            `UPDATE added_users SET ? WHERE added_user_id = ${object.added_user_id}`,
+            [object]
+        );
+
+        return result;
+    }
+
+    
+    async getAddedUserByEmail(email:string): Promise<any> {
+        //const data = user.toPersistence();
+
+        const [result] = await this.db.query<RowDataPacket[]>(
+            `SELECT * FROM added_users WHERE personal_email='${email}'`
+        );
+
+        return result;
+    }
+
+    async createBulkUploadRun(): Promise<any> {
+        //const data = user.toPersistence();
+        var object = {
+            status: 'Started...'
+        }
+
+        const [result] = await this.db.query<ResultSetHeader>(
+            `INSERT bulk_upload_runs SET ?`,
+            [object]
+        );
+
+        const header = result as ResultSetHeader;
+        return header.affectedRows > 0 ? header.insertId : undefined;
+    }
+
+    async updateBulkUploadRun(object:any): Promise<any> {
+        //const data = user.toPersistence();
+
+        const [result] = await this.db.query<RowDataPacket[]>(
+            `UPDATE bulk_upload_runs SET ? WHERE bulk_upload_run_id = ${object.bulk_upload_run_id}`,
+            [object]
+        );
+
+        return result;
+    }
+
+    async getBulkUploadRun(run_id:number): Promise<any> {
+        //const data = user.toPersistence();
+
+        const [result] = await this.db.query<RowDataPacket[]>(
+            `SELECT * FROM bulk_upload_runs WHERE bulk_upload_run_id=${run_id}`
         );
 
         return result;

@@ -4,6 +4,9 @@ import { BlobServiceClient, BlockBlobClient, ContainerClient } from '@azure/stor
 import { ApisService } from './apis.service';
 import { inject, injectable } from 'tsyringe';
 import { CommonService } from './common.service';
+import { GoogleService } from './google.service';
+const fs = require('fs');
+const csv = require('csv-parser');
 
 
 /**
@@ -17,7 +20,8 @@ export class DocsService {
 
     constructor(
         @inject(ApisService) public apisService: ApisService,
-        @inject(CommonService) public commonService: CommonService
+        @inject(CommonService) public commonService: CommonService,
+        @inject(GoogleService) public googleService: GoogleService,
     ) {
         const accountName = process.env.AZURE_STORAGE_ACCOUNT_NAME;
         if (!accountName) {
@@ -40,6 +44,8 @@ export class DocsService {
      * @param production The Production data object
      * @returns The URL of the uploaded blob
      */
+    
+    
     public async generateAndUploadReport(production_id: any): Promise<string> {
 
         //get production details
@@ -300,6 +306,155 @@ export class DocsService {
         //console.log('final_html', final_html);
         return final_html;
     }
+
+    public async uploadUsersFromCSV(filePath:string, run_id:number): Promise<any> {
+      
+    var new_usersx = await this.getUsersInDocument(filePath) as any[];
+    console.log('new_usersx', new_usersx);
+    console.log('run_id', run_id);
+
+    //map CSV data
+    var new_users = new_usersx.map((x:any) => {
+      return {
+        first_name: x['First Name [Required]'],
+        last_name: x['Last Name [Required]'],
+        personal_email: x['Email Address [Required]'],
+        org_unit_path: x['Org Unit Path [Required]']
+      }
+    });
+
+    console.log('new_users', new_users);
+
+    //check that all productions exist
+    var productions = await this.apisService.getProductions();
+
+    this.apisService.updateBulkUploadRun(run_id, "Validating produtions...");
+
+    //check production and set domain for each user
+    var non_existing_productions:any[] = [];
+    new_users.forEach((user:any) => {
+      //find production
+      var record = productions.find((x:any) => {
+        //console.log('x.name', x.name);
+        if (!x.name) return false;
+        return x.name.toLowerCase().replace(/[()]/g,'').replace('/','').replace(/ /g,'') == user.org_unit_path.toLowerCase().replace(/[()]/g,'').replace('/','').replace(/ /g,'')
+      });
+
+      if(record){
+        console.log('record found', user.org_unit_path);
+        user.domain = record.domain;
+        user.production = record.name;
+      }
+      else{
+        console.log('not found', user.org_unit_path);
+        non_existing_productions.push(user.org_unit_path);
+      }
+
+    });
+
+    console.log('new_users', new_users);
+
+    //var users = await this.apisService.getUsers();
+    
+    
+    //var already_existing_users:any[] = [];
+
+    /*
+    new_users.forEach((user:any) => {
+      //find production
+      var record = productions.find((x:any) => {
+        //console.log('x.name', x.name);
+        if (!x.name) return false;
+        return x.name.toLowerCase().replace(/[()]/g,'').replace('/','').replace(/ /g,'') == user.production.toLowerCase().replace(/[()]/g,'').replace('/','').replace(/ /g,'')
+      });
+      if (!record) non_existing_productions.push(user.production);
+    */
+      //find existing user
+      /*
+      var existing_user = users.find((x:any) => { 
+        if (!x.personal_email) return false;
+        return x.personal_email.toLowerCase() == user.email.toLowerCase()
+      });
+      if (existing_user) already_existing_users.push(existing_user.personal_email);
+      */
+    //});
+
+    console.log('non_existing_productions', non_existing_productions);
+    //console.log('already_existing_users', already_existing_users);
+
+    
+    if (non_existing_productions.length > 0) {
+      return {
+        error: 'Can not perform bulk addition because the following productions do not exist: ' + non_existing_productions
+      }
+    }
+
+    var ctr = 0;
+    for (let user of new_users){
+      //add user to google
+      var google_response = await this.googleService.addUserToGoogle(user);
+      ctr += 1;
+      this.apisService.updateBulkUploadRun(run_id, `Completing ${ctr} of ${new_users.length}...`);
+    }
+
+    //after a bulk import, sync data
+    this.apisService.updateBulkUploadRun(run_id, `Syncing all data...`);
+    await this.googleService.syncGoogleData();
+
+    this.apisService.updateBulkUploadRun(run_id, `Completed.`);
+    /*
+    if (already_existing_users.length > 0) {
+      return {
+        error: 'Can not perform bulk addition because users with the following personal emails already exist: ' + already_existing_users
+      }
+    }
+    */
+
+
+    return new_users.length;
+  }
+
+  public async getUsersInDocument(filePath:string){
+    const new_users:any[] = [];
+
+    return new Promise((resolve, reject) => {
+      fs.createReadStream(filePath)
+        .pipe(csv({ bom: true })) // <--- Add this option here
+        .on('data', (row:any) => {
+          // Optional: Transform or validate row data here
+          //sanitized to removed quotes from header names
+          const sanitizedRow:any = {};
+          for (let key in row) {
+            const cleanKey = key.replace(/^\ufeff/, '');
+            sanitizedRow[cleanKey] = row[key];
+          }
+          
+          new_users.push(sanitizedRow);
+          
+        })
+        .on('end', async () => {
+          try {
+            if (new_users.length === 0) return resolve(0);
+            else{
+              //console.log('new_users',new_users);
+
+              // Cleanup: remove the temp file from /uploads
+              fs.unlinkSync(filePath);
+              return resolve(new_users)
+            }
+
+            //resolve(result.affectedRows);
+          } catch (err) {
+            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+            reject(err);
+          }
+        })
+        .on('error', (err:any) => {
+          if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+          reject(err);
+        });
+    });
+  }
 }
 
 // Export as a singleton for use across your application

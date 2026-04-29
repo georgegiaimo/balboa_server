@@ -18,6 +18,7 @@ export class ApisRoute implements Routes {
     this.router.get(`${this.path}/getProductions`, this.apisController.getProductions);
     this.router.get(`${this.path}/getProductionDetails`, this.apisController.getProductionDetails);
     this.router.post(`${this.path}/updateProduction`, this.apisController.updateProduction);
+    //this.router.post(`${this.path}/addProduction`, this.apisController.updateProduction);
     this.router.get(`${this.path}/domainDetails`, this.apisController.getDomainDetails);
     this.router.get(`${this.path}/getUserDetails`, this.apisController.getUserDetails);
     this.router.get(`${this.path}/getDomainDetails`, this.apisController.getDomainDetails);
@@ -45,5 +46,13 @@ export class ApisRoute implements Routes {
     this.router.get(`${this.path}/getSimilarByName`, this.apisController.getSimilarByName);
     this.router.get(`${this.path}/getApproachingOneYear`, this.apisController.getApproachingOneYear);
     this.router.get(`${this.path}/getGoogleUsers`, this.apisController.getGoogleUsers);
+
+    this.router.post(`${this.path}/addProductionAssignment`, this.apisController.addProductionAssignment);
+    this.router.post(`${this.path}/updateProductionAssignment`, this.apisController.updateProductionAssignment);
+    this.router.post(`${this.path}/deleteProductionAssignment`, this.apisController.deleteProductionAssignment);
+    this.router.get(`${this.path}/getProductionAssignment`, this.apisController.getProductionAssignment);
+
+    this.router.get(`${this.path}/getBulkUploadRun`, this.apisController.getBulkUploadRun);
+    this.router.post(`${this.path}/createBulkUploadRun`, this.apisController.createBulkUploadRun);
   }
 }

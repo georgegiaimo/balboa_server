@@ -22,6 +22,23 @@ export class CommonService {
         return `${month}-${day}-${year}`;
     };
 
+    getDate2 = (epoch: number): string => {
+        
+        if(!epoch) return '-';
+        // Heuristic: If the number is too small (e.g., 10 digits), 
+        // it's likely seconds. JS Date needs milliseconds (13 digits).
+        const timestamp = epoch < 10000000000 ? epoch * 1000 : epoch;
+
+        const date = new Date(timestamp);
+
+        // Extract components
+        const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Months are 0-indexed
+        const day = date.getDate().toString().padStart(2, '0');
+        const year = date.getFullYear();
+
+        return `${year}-${month}-${day}`;
+    };
+
     createToken = () => {
         var chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
         var token = '';
@@ -52,6 +69,16 @@ export class CommonService {
         const day = String(date.getDate()).padStart(2, '0');
 
         return `${year}-${month}-${day}`;
+    }
+
+    getNoonEpoch(dateString: string) {
+        const date = new Date(dateString);
+
+        // Set the time to 12:00:00.000 (Local Time)
+        date.setHours(12, 0, 0, 0);
+
+        // getTime() returns milliseconds, so we divide by 1000 to get seconds
+        return date.getTime();
     }
 
 }

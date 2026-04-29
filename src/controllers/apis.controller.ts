@@ -413,5 +413,86 @@ export class ApisController {
         }
     };
 
+    
+    public addProductionAssignment = async (req: Request, res: Response, next: NextFunction) => {
+            try {
+                var data = req.body;
+                // Controller calls the service
+                const result = await this.apisService.addProductionAssignment(data);
+                // Controller sends the final response
+                res.status(200).json({ data: result, message: 'success' });
+            }
+            catch (error) {
+                next(error); // Pass to global error handler
+            }
+        };
+    
+    public updateProductionAssignment = async (req: Request, res: Response, next: NextFunction) => {
+            try {
+                var data = req.body;
+                // Controller calls the service
+                const result = await this.apisService.updateProductionAssignment(data);
+                // Controller sends the final response
+                res.status(200).json({ data: result, message: 'success' });
+            }
+            catch (error) {
+                next(error); // Pass to global error handler
+            }
+        };
+    
+    public getProductionAssignment = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+
+            var production_assignment_id = Number(req.query.id); 
+            // Controller calls the service
+            const result = await this.apisService.getProductionAssignment(production_assignment_id);
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
+    public deleteProductionAssignment = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            var data = req.body;
+            // Controller calls the service
+            const result = await this.apisService.deleteProductionAssignment(data);
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        }
+        catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
+    public createBulkUploadRun = async (req: Request, res: Response, next: NextFunction) => {
+            try {
+                //var data = req.body;
+                // Controller calls the service
+                const result = await this.apisService.createBulkUploadRun();
+                // Controller sends the final response
+                res.status(200).json({ data: result, message: 'success' });
+            }
+            catch (error) {
+                next(error); // Pass to global error handler
+            }
+        };
+
+    public getBulkUploadRun = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+
+            var bulk_upload_run_id = Number(req.query.id); 
+            // Controller calls the service
+            const result = await this.apisService.getBulkUploadRun(bulk_upload_run_id);
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
 
 }

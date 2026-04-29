@@ -4,6 +4,7 @@ import { all } from 'axios';
 import { CommonService } from './common.service';
 import { SendGridService } from './sendgrid.service';
 import { Send } from 'express';
+import { EmailNotificationsService } from './email_notifications';
 
 
 @injectable()
@@ -12,7 +13,8 @@ export class ApisService {
     constructor(
         @inject(ApisRepository) private apisRepository: IApisRepository,
         @inject(CommonService) public commonService: CommonService,
-        @inject(SendGridService) public sendgridService: SendGridService
+        @inject(SendGridService) public sendgridService: SendGridService,
+        @inject(EmailNotificationsService) public emailNotificationsService: EmailNotificationsService
     ) { }
 
     public async getProductions() {
@@ -22,9 +24,7 @@ export class ApisService {
         var coordinators = await this.apisRepository.getCoordinators();
         var coordinator_assignments = await this.apisRepository.getCoordinatorAssignments();
 
-        //console.log('productions.length', productions.length);
-        //console.log('assignments.length', assignments.length);
-
+        var status_orders = ['Canceled','Paused', 'Completed', 'Post Production', 'Writers Room', 'Active'];
         //get how many assignments for each production
         productions.forEach((production:any) => {
             //get active assignments
@@ -47,7 +47,9 @@ export class ApisService {
 
         //filter productions with 0 active users
         //productions = productions.filter((x:any) => { return x.active_users > 0});
-        productions = productions.sort((a:any, b:any) => { return b.active_users - a.active_users});
+        productions = productions.sort((a:any, b:any) => { 
+            return status_orders.indexOf(b.status) - status_orders.indexOf(a.status);
+        });
 
         return productions;
     }
@@ -91,12 +93,20 @@ export class ApisService {
         var userx = await this.apisRepository.getUserDetails(user_id);
         var user = userx[0];
         var assignments = await this.apisRepository.getUserAssignments(user_id);
+        var added_userx = await this.apisRepository.getAddedUserByEmail(user.personal_email);
+        var added_user = added_userx[0];
 
         assignments.forEach((x:any) => {
             //get start and end dates
-            x.assignment_start_date = this.commonService.getDate(x.created_timestamp);
+            x.assignment_start_date = this.commonService.getDate(x.started_timestamp);
             x.assignment_end_date = this.commonService.getDate(x.ended_timestamp);
         });
+
+        if (added_user){
+            if (added_user.notification_sent_timestamp) added_user.notification_date = this.commonService.getDate(added_user.notification_sent_timestamp);
+            if (added_user.reminder_one_sent_timestamp) added_user.reminder1_date = this.commonService.getDate(added_user.reminder_one_sent_timestamp);
+            if (added_user.reminder_two_sent_timestamp) added_user.reminder2_date = this.commonService.getDate(added_user.reminder_two_sent_timestamp);
+        }
 
         user.last_login_date = this.commonService.getDate(user.last_login_time);
         user.creation_date = this.commonService.getDate(user.creation_time);
@@ -104,7 +114,8 @@ export class ApisService {
 
         return {
             user: user,
-            assignments: assignments
+            assignments: assignments,
+            added_user: added_user
         }
 
     }
@@ -123,6 +134,7 @@ export class ApisService {
             var productionsx = [] as any[];
             assignmentsx.forEach((n:any) => {
                 var production = productions.find((m:any) => { return m.production_id == n.production_id});
+                //if (!production) console.log('production', production, n);
                 production.assignment_status = n.status;
                 //get start and end dates
                 production.assignment_start_date = this.commonService.getDate(n.created_timestamp);
@@ -357,7 +369,6 @@ export class ApisService {
 
     public async getCoordinatorAssignment(coordinator_assignment_id:number){
         var assignmentx = await this.apisRepository.getCoordinatorAssignment(coordinator_assignment_id);
-        console.log('assignmentx',assignmentx);
         var assignment = assignmentx[0];
         var productionx = await this.apisRepository.getProduction(assignment.production_id);
         var coordinatorx = await this.apisRepository.getCoordinator(assignment.coordinator_id);
@@ -778,6 +789,119 @@ export class ApisService {
     public async getGoogleUsers(){
         var google_users = this.apisRepository.getGoogleUsers();
         return google_users;
+    }
+
+    async addProductionAssignment(data:any) {
+        var production_assignment = {
+            user_id: data.user_id,
+            production_id: data.production_id,
+            notes: data.notes,
+            created_timestamp: this.commonService.getNoonEpoch(data.start_date),
+            ended_timestamp: this.commonService.getNoonEpoch(data.end_date),
+            status: data.status
+        };
+        var production_assignment_id = this.apisRepository.addProductionAssignment(production_assignment);
+        return production_assignment_id;
+    }
+    async updateProductionAssignment(data:any) {
+        var production_assignment = {
+            production_assignment_id: data.production_assignment_id,
+            user_id: data.user_id,
+            production_id: data.production_id,
+            notes: data.notes,
+            created_timestamp: this.commonService.getNoonEpoch(data.start_date),
+            ended_timestamp: this.commonService.getNoonEpoch(data.end_date),
+            status: data.status
+        };
+        var production_assignment_id = this.apisRepository.updateProductionAssignment(production_assignment);
+        return production_assignment_id;
+    }
+
+    async deleteProductionAssignment(data:any) {
+        
+        var production_assignment_id = this.apisRepository.deleteProductionAssignment(data.production_assignment_id);
+        return production_assignment_id;
+    }
+
+    async accountLoginReminders(){
+        var added_users = await this.apisRepository.getAddedUsers();
+        var users = await this.apisRepository.getUsers();
+
+        for (let user of added_users){
+
+            if (user.has_logged_in) continue;
+
+            if (!user.user_id){
+                //find user and assign user id
+                var record = users.find((x:any) => { return x.personal_email.toLowerCase() == user.personal_email.toLowerCase()});
+                if (record){
+                    var object = {
+                        added_user_id: user.added_user_id,
+                        user_id: record.user_id,
+                        has_logged_in: record.last_login_time > 0
+                    }
+
+                    await this.apisRepository.updateAddedUser(object);
+                }
+            }
+
+            else if(!user.reminder_one_sent_timestamp && user.created_timestamp > (1000 * 60 * 60 * 24 * 3)){
+                //send reminder 1
+                this.sendgridService.accountCreatedReminder1(user);
+                this.emailNotificationsService.saveEmailNotification({
+                    personal_email: user.personal_email,
+                    reminder_one_sent_timestamp: Date.now()
+                });
+            }
+
+            else if(user.reminder_one_sent_timestamp && !user.reminder_two_sent_timestamp && user.created_timestamp > (1000 * 60 * 60 * 24 * 8)){
+                //send reminder 2
+                this.sendgridService.accountCreatedReminder2(user);
+                this.emailNotificationsService.saveEmailNotification({
+                    personal_email: user.personal_email,
+                    reminder_two_sent_timestamp: Date.now()
+                })
+            }
+        }
+    }
+
+    public async getProductionAssignment(production_assignment_id:number){
+        var assignmentx = await this.apisRepository.getProductionAssignment(production_assignment_id);
+        var assignment = assignmentx[0];
+        var productionx = await this.apisRepository.getProduction(assignment.production_id);
+        var userx = await this.apisRepository.getUser(assignment.user_id);
+
+        assignment.start_date = this.commonService.getDate2(assignment.created_timestamp);
+        assignment.end_date = this.commonService.getDate2(assignment.ended_timestamp);
+        
+        return {
+            production_assignment: assignment,
+            production: productionx[0],
+            user: userx[0]
+        }
+    }
+
+    public async createBulkUploadRun(){
+        var run_id = await this.apisRepository.createBulkUploadRun();
+        return run_id;
+    }
+
+    public async updateBulkUploadRun(run_id:number, status:string){
+        
+        var object = {
+            bulk_upload_run_id: run_id,
+            status: status
+        }
+
+        var response = await this.apisRepository.updateBulkUploadRun(object);
+        return response;
+    }
+
+    public async getBulkUploadRun(run_id:number){
+        var runx = await this.apisRepository.getBulkUploadRun(run_id);
+        var run = runx[0];
+        
+        return run;
     }
     
 }

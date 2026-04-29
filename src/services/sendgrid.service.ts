@@ -59,6 +59,66 @@ export class SendGridService {
         this.sendEmail(mailObj);
     }
 
+    async accountCreatedNotification(data: any) {
+
+        var mailObj = {
+            to: data.personal_email,
+            from: {
+                email: "admin@askbalboa.com",
+                name: "Balboa Computer"
+            },
+            templateId: "d-2a6fd1e6742e4fa684d85964ecb9c940",
+            dynamic_template_data: {
+                name: data.first_name,
+                production_email: data.production_email,
+                password: data.temporary_password,
+                production: data.org_unit_path
+            }
+        }
+
+        this.sendEmail(mailObj);
+    }
+
+    async accountCreatedReminder1(data: any) {
+
+        var mailObj = {
+            to: data.personal_email,
+            from: {
+                email: "admin@askbalboa.com",
+                name: "Balboa Computer"
+            },
+            templateId: "d-aff8ae37bb6942bd8550ad356153ffe4",
+            dynamic_template_data: {
+                name: data.first_name,
+                production_email: data.production_email,
+                password: data.temporary_password,
+                production: data.org_unit_path
+            }
+        }
+
+        this.sendEmail(mailObj);
+    }
+
+    async accountCreatedReminder2(data: any) {
+
+        var mailObj = {
+            to: data.personal_email,
+            from: {
+                email: "admin@askbalboa.com",
+                name: "Balboa Computer"
+            },
+            templateId: "d-c4dbed2df7294f05802cd6a761403d2e",
+            dynamic_template_data: {
+                name: data.first_name,
+                production_email: data.production_email,
+                password: data.temporary_password,
+                production: data.org_unit_path
+            }
+        }
+
+        this.sendEmail(mailObj);
+    }
+
 
     async sendEmail(msg: any) {
 

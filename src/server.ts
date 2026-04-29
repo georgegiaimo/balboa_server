@@ -20,6 +20,9 @@ import { AirtableRepository, type IAirtableRepository } from '@repositories/airt
 import { pool } from './database.config';
 import { CommonService } from './services/common.service';
 import { GoogleRoute } from './routes/google.route';
+import { EmailNotificationsRepository } from './repositories/email_notifications.repository';
+import { SendGridService } from './services/sendgrid.service';
+import { EmailNotificationsService } from './services/email_notifications';
 
 //container.registerInstance(UsersRepository, new UsersRepository());
 
@@ -36,7 +39,12 @@ const routes = [
 
 var commonService = new CommonService;
 var googleRepository = new GoogleRepository(pool);
-const googleService = new GoogleService(googleRepository, commonService);
+var emailNotificationsRepository = new EmailNotificationsRepository(pool);
+
+var sendgridService = new SendGridService(commonService);
+var emailNotificationsService = new EmailNotificationsService(emailNotificationsRepository);
+
+const googleService = new GoogleService(googleRepository, commonService, sendgridService, emailNotificationsService);
 
 var airtableRepository = new AirtableRepository(pool);
 const airtableService = new AirtableService(airtableRepository);

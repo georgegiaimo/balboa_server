@@ -20,4 +20,47 @@ export class DocsController {
         }
     };
 
+    
+
+    public uploadUsersFromCSV = async (req: any, res: Response): Promise<Response> => {
+
+  try {
+    // 1. Validate that the file exists
+    if (!req.file) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'No CSV file provided.' 
+      });
+    }
+
+    var run_id = Number(req.query.id);
+
+    // 2. Call the service to process the file
+    // The path is guaranteed to be a string here because of the check above
+    const response = await this.docsService.uploadUsersFromCSV(req.file.path, run_id);
+
+    if (response.error) {
+        return res.status(400).json(response);
+    }
+    else{
+
+    // 3. Return success response
+    return res.status(200).json({
+      success: true,
+      //message: `Successfully imported ${recordCount} assignments.`,
+      //count: recordCount
+    });
+    }
+
+  } catch (error: any) {
+    console.error('Upload Controller Error:', error);
+    
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred during the bulk import.',
+      details: error.message || 'Unknown server error'
+    });
+  }
+};
+
 }

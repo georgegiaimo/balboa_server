@@ -2,6 +2,8 @@ import { injectable, inject, delay } from 'tsyringe';
 import axios from 'axios';
 import { GoogleRepository, IGoogleRepository } from '@/repositories/google.repository';
 import { CommonService } from './common.service';
+import { SendGridService } from './sendgrid.service';
+import { EmailNotificationsService } from './email_notifications';
 //import { ChatRepository } from '@repositories/chat.repository';
 const { JWT } = require('google-auth-library');
 //const keys = require('../../airtable-integration-471002-dbb2e4afc3d1.json'); // Your downloaded JSON key
@@ -55,7 +57,9 @@ export class GoogleService {
 
     constructor(
         @inject(GoogleRepository) private googleRepository: IGoogleRepository,
-        @inject(CommonService) public commonService: CommonService
+        @inject(CommonService) public commonService: CommonService,
+        @inject(SendGridService) public sendgridService: SendGridService,
+        @inject(EmailNotificationsService) public emailNotificationsService: EmailNotificationsService
     ) { }
 
     public async getAccessToken(domain_keys:any, subject_email:string) {
@@ -942,7 +946,7 @@ export class GoogleService {
         console.log('access_token', access_token, user_data.domain);
 
         //create a temp password
-        var password = this.commonService.createPassword();
+        var password = user_data.password ? user_data.password:this.commonService.createPassword();
 
         // Google Admin SDK Directory API Endpoint
         const url = 'https://admin.googleapis.com/admin/directory/v1/users';
@@ -989,18 +993,28 @@ export class GoogleService {
                 temporary_password: password,
                 org_unit_path: user_data.org_unit_path,
                 domain: user_data.domain,
-                notes: user_data.notes,
-                is_identity_client: user_data.is_identity_client
+                notes: user_data.notes
             }
 
             await this.googleRepository.saveNewUser(object);
+
+            await this.sendgridService.accountCreatedNotification(object);
+
+            //record sending of message, use email as identifier
+            await this.emailNotificationsService.saveEmailNotification({
+                personal_email: object.personal_email,
+                notification_sent_timestamp: Date.now() 
+            });
 
             return response.data;
         } catch (error: any) {
             // Detailed error logging for Google API responses
             const errorDetail = error.response?.data?.error || error.message;
             console.error('❌ Failed to create Google User:', errorDetail);
-            throw errorDetail;
+            //throw errorDetail;
+            return {
+                error: '❌ Failed to create Google User:' + errorDetail
+            }
         }
     }
 
@@ -1120,7 +1134,22 @@ console.log('update user in google', user_data);
   } catch (error: any) {
     const errorDetail = error.response?.data?.error || error.message;
     console.error('❌ Failed to update Google User:', errorDetail);
-    throw errorDetail;
+    
+    console.log('***** updating local record');
+    //user doesnt exist in google - update local record directly
+    var user_object = {
+        user_id: user_data.user_id,
+        personal_email: user_data.personal_email,
+        first_name: user_data.first_name,
+        last_name: user_data.last_name
+    }
+
+    console.log('user_object', user_object);
+
+    var response2  = await this.googleRepository.updateUser(user_object);
+    return response2;
+
+    //throw errorDetail;
   }
 }
 
@@ -1226,6 +1255,151 @@ public async updateUserUsage(){
 
     }
 }
+
+
+public async createGoogleOrgUnit(
+  data: any
+): Promise<any> {
+
+    //get access token
+    var access_token;
+    if (data.domain == 'crew-tv') {
+        access_token = await this.getAccessToken(keys, 'admin@crew-tv.com');
+    }
+    else if (data.domain == 'mount22prod' || data.domain == 'seriescrew') {
+        access_token = await this.getAccessToken(keys2, 'admin@mount22prod.com');
+    }
+    else return;
+  
+  const customerId = 'my_customer';
+  const url = `https://admin.googleapis.com/admin/directory/v1/customer/${customerId}/orgunits`;
+
+  const body: any = {
+    name: data.name,
+    description: data.description,
+    parentOrgUnitPath: '/'
+  };
+
+  try {
+    const response:any = await axios.post(url, body, {
+      headers: {
+        'Authorization': `Bearer ${access_token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log(`Successfully created OU: ${response.data.orgUnitPath}`);
+    return response.data;
+    
+  } catch (error: any) {
+    // Handle specific Google API errors
+    if (axios.isAxiosError(error) && error.response) {
+      const apiError = error.response.data.error;
+      console.error('Google Directory API Error:', apiError.message);
+      
+      if (error.response.status === 409) {
+        throw new Error(`Organizational Unit "${data.name}" already exists at path "/".`);
+      }
+    }
+    
+    throw error;
+  }
+}
+
+    public async updateGoogleOrgUnit(data: any): Promise<any> {
+
+        //get access token
+        var access_token;
+        if (data.domain == 'crew-tv') {
+            access_token = await this.getAccessToken(keys, 'admin@crew-tv.com');
+        }
+        else if (data.domain == 'mount22prod' || data.domain == 'seriescrew') {
+            access_token = await this.getAccessToken(keys2, 'admin@mount22prod.com');
+        }
+        else return;
+
+        const customerId = 'my_customer';
+
+        // The path in the URL must be URL-encoded (e.g., / becomes %2F)
+        const encodedPath = encodeURIComponent(data.org_unit_path.startsWith('/') ? data.org_unit_path.substring(1) : data.org_unit_path);
+        const url = `https://admin.googleapis.com/admin/directory/v1/customer/${customerId}/orgunits/${encodedPath}`;
+
+        try {
+            const response: any = await axios.patch(url, {
+                name: data.name
+            }, {
+                headers: {
+                    'Authorization': `Bearer ${access_token}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            console.log(`Successfully updated OU at: ${data.org_unit_path}`);
+            return response.data;
+
+        } catch (error: any) {
+            if (axios.isAxiosError(error) && error.response) {
+                console.error('Update OU Error:', error.response.data.error.message);
+            }
+            throw error;
+        }
+    }
+
+    public async deleteGoogleOrgUnit(data: any): Promise<void> {
+
+        //get access token
+        var access_token;
+        if (data.domain == 'crew-tv') {
+            access_token = await this.getAccessToken(keys, 'admin@crew-tv.com');
+        }
+        else if (data.domain == 'mount22prod' || data.domain == 'seriescrew') {
+            access_token = await this.getAccessToken(keys2, 'admin@mount22prod.com');
+        }
+        else return;
+
+        const customerId = 'my_customer';
+
+        // 1. Clean the path and encode it
+        // Remove the leading slash as the API expects the path relative to root
+        const cleanPath = data.org_unit_path.startsWith('/') ? data.org_unit_path.substring(1) : data.org_unit_path;
+        const encodedPath = encodeURIComponent(cleanPath);
+
+        const url = `https://admin.googleapis.com/admin/directory/v1/customer/${customerId}/orgunits/${encodedPath}`;
+
+        try {
+            await axios.delete(url, {
+                headers: {
+                    'Authorization': `Bearer ${access_token}`,
+                },
+            });
+
+            console.log(`Successfully deleted Organizational Unit: ${data.org_unit_path}`);
+        } catch (error: any) {
+            if (axios.isAxiosError(error) && error.response) {
+                const apiError = error.response.data.error;
+
+                // Handle the "Not Empty" case
+                if (error.response.status === 400) {
+                    console.error('Delete Failed: Ensure the OU has no users or child units.');
+                }
+
+                console.error(`Google API Error [${error.response.status}]:`, apiError.message);
+            }
+            throw error;
+        }
+    }
+
+
+    public async storeEmailNotification(email: string): Promise<void> {
+    
+        var object = {
+            email: email,
+            notification_sent_timestamp: Date.now()
+        }
+
+
+    
+    }
 
 
 }

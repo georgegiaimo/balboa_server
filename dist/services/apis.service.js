@@ -273,7 +273,6 @@ let ApisService = class ApisService {
     }
     async getCoordinatorAssignment(coordinator_assignment_id) {
         var assignmentx = await this.apisRepository.getCoordinatorAssignment(coordinator_assignment_id);
-        console.log('assignmentx', assignmentx);
         var assignment = assignmentx[0];
         var productionx = await this.apisRepository.getProduction(assignment.production_id);
         var coordinatorx = await this.apisRepository.getCoordinator(assignment.coordinator_id);

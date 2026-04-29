@@ -86,5 +86,59 @@ export class GoogleController {
         }
     };
 
+    public createGoogleOrgUnit = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+
+            var user_data = req.body;
+
+            if (!user_data.domain) {
+                return res.status(400).json({ message: 'User domain required. Expected a domain value of crew-tv, mount22prod or seriescrew.' });
+            }
+            // Controller calls the service
+            const result = await this.googleService.createGoogleOrgUnit(user_data);
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
+    public updateGoogleOrgUnit = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+
+            var user_data = req.body;
+
+            if (!user_data.domain) {
+                return res.status(400).json({ message: 'User domain required. Expected a domain value of crew-tv, mount22prod or seriescrew.' });
+            }
+            // Controller calls the service
+            const result = await this.googleService.updateGoogleOrgUnit(user_data);
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
+    public deleteGoogleOrgUnit = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+
+            var user_data = req.body;
+
+            if (!user_data.domain) {
+                return res.status(400).json({ message: 'User domain required. Expected a domain value of crew-tv, mount22prod or seriescrew.' });
+            }
+            // Controller calls the service
+            const result = await this.googleService.deleteGoogleOrgUnit(user_data);
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
 
 }
