@@ -78,7 +78,10 @@ export class CommonService {
         date.setHours(12, 0, 0, 0);
 
         // getTime() returns milliseconds, so we divide by 1000 to get seconds
-        return date.getTime();
+        var epoch = date.getTime();
+
+        if (isNaN(epoch)) return null;
+        else return epoch;
     }
 
 }

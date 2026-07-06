@@ -34,10 +34,11 @@ export class DocsController {
     }
 
     var run_id = Number(req.query.id);
+    var type = req.query.type;
 
     // 2. Call the service to process the file
     // The path is guaranteed to be a string here because of the check above
-    const response = await this.docsService.uploadUsersFromCSV(req.file.path, run_id);
+    const response = await this.docsService.uploadUsersFromCSV(req.file.path, run_id, type);
 
     if (response.error) {
         return res.status(400).json(response);

@@ -24,5 +24,6 @@ export class GoogleRoute implements Routes {
     this.router.post(`${this.path}/createGoogleOrgUnit`, this.googleController.createGoogleOrgUnit);
     this.router.post(`${this.path}/updateGoogleOrgUnit`, this.googleController.updateGoogleOrgUnit);
     this.router.post(`${this.path}/deleteGoogleOrgUnit`, this.googleController.deleteGoogleOrgUnit);
+    this.router.post(`${this.path}/deleteUsersBulk`, this.googleController.deleteUsersBulk);
   }
 }

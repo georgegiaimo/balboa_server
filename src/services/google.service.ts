@@ -521,10 +521,8 @@ export class GoogleService {
         //console.log('users in google', google_users.length);
         //console.log('google_users[0]', google_users[0]);
 
-             
-        
          for (let user_gg of google_users){
-
+            
             var user_gg_personal_email = user_gg.emails[0] ? user_gg.emails[0].address:'';
             if (!user_gg_personal_email) continue;
 
@@ -534,6 +532,16 @@ export class GoogleService {
             });
 
             if (record){
+
+                //assign google_id if missing
+                if (!record.google_id) {
+                    var user_objectn = {
+                        user_id: record.user_id,
+                        google_id: user_gg.id
+                    }
+
+                    await this.googleRepository.updateUser(user_objectn);
+                }
 
                 //update last login time if different
                 if (user_gg.lastLoginTime) {
@@ -951,8 +959,20 @@ export class GoogleService {
         // Google Admin SDK Directory API Endpoint
         const url = 'https://admin.googleapis.com/admin/directory/v1/users';
 
+        var email_first_name = user_data.first_name
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '') // remove accents
+            .replace(/[^A-Za-z0-9]/g, '')    // keep only letters and numbers
+            .toLowerCase();
+        var email_last_name = user_data.last_name
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '') // remove accents
+            .replace(/[^A-Za-z0-9]/g, '')    // keep only letters and numbers
+            .toLowerCase();
+        
+
         const body = {
-            primaryEmail: `${user_data.first_name}.${user_data.last_name}@${user_data.domain}.com`.toLowerCase(),
+            primaryEmail: `${email_first_name}.${email_last_name}@${user_data.domain}.com`.toLowerCase(),
             name: {
                 givenName: user_data.first_name,
                 familyName: user_data.last_name,
@@ -998,12 +1018,15 @@ export class GoogleService {
 
             await this.googleRepository.saveNewUser(object);
 
-            await this.sendgridService.accountCreatedNotification(object);
+            var sendgrid_response = await this.sendgridService.accountCreatedNotification(object);
+
+            var sendgrid_message_id = sendgrid_response.response[0].headers['x-message-id'];
 
             //record sending of message, use email as identifier
             await this.emailNotificationsService.saveEmailNotification({
                 personal_email: object.personal_email,
-                notification_sent_timestamp: Date.now() 
+                notification_sent_timestamp: Date.now(),
+                notification_sendgrid_message_id: sendgrid_message_id
             });
 
             return response.data;
@@ -1020,8 +1043,10 @@ export class GoogleService {
 
     async deleteUserInGoogle(user_data:any) {
 
+
     console.log('delete user in google', user_data);
 
+    
     //determine domain
     var domain;
     if (user_data.production_email.indexOf('crew-tv') > -1) domain = 'crew-tv';
@@ -1068,7 +1093,7 @@ export class GoogleService {
       console.error('❌ Failed to delete Google User:', errorDetail);
     }
     
-    throw errorDetail;
+    //throw errorDetail;
   }
 }
 
@@ -1397,8 +1422,44 @@ public async createGoogleOrgUnit(
             notification_sent_timestamp: Date.now()
         }
 
+    }
 
-    
+    public async deleteUsersBulk(data: any[], run_id:number): Promise<void> {
+
+        var ctr = 1;
+        for (let user_object of data){
+
+            console.log('Deleting...', user_object);
+
+            var userx = await this.googleRepository.getUser(user_object.user_id);
+            var user = userx[0];
+
+            this.googleRepository.updateBulkUploadRun({
+                bulk_upload_run_id: run_id, 
+                status: `Deleting ${ctr} of ${data.length}...`
+            });
+
+            ctr += 1;
+
+            await this.deleteUserInGoogle(user);
+
+        }
+
+        /*
+        //after a bulk delete, sync data
+        this.googleRepository.updateBulkUploadRun({
+                bulk_upload_run_id: run_id, 
+                status: `Syncing all data...`
+            });
+
+        await this.syncGoogleData();
+        */
+
+        await this.googleRepository.updateBulkUploadRun({
+                bulk_upload_run_id: run_id, 
+                status: `Completed`
+            });
+
     }
 
 

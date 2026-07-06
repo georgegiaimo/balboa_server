@@ -23,6 +23,7 @@ export interface IApisRepository {
 
     getProductionCoordinators(production_id:number): Promise<any>;
     getProductionUsers(production_id:number): Promise<any>;
+    getProductionUsersX(production_id:number): Promise<any>;
     getProductionActivity(production_id:number): Promise<any>;
 
     getUsers(): Promise<any>;
@@ -30,6 +31,7 @@ export interface IApisRepository {
     updateUser(user:any): Promise<any>;
     getUserDetails(user_id:number): Promise<any>;
     getUserAssignments(user_id:number): Promise<any>;
+    addUser(user:any): Promise<any>;
 
     getAdmins(): Promise<any>;
     //addAdmin(admin:any): Promise<any>;
@@ -38,6 +40,8 @@ export interface IApisRepository {
     getAdminByEmail(email:string): Promise<any>;
 
     getReportActions(): Promise<any>;
+    deleteReportAction(report_action_id:number): Promise <any>;
+
     getGoogleUsers(): Promise<any>;
 
     addProductionAssignment(production_assignment:any): Promise<any>;
@@ -46,8 +50,9 @@ export interface IApisRepository {
     deleteProductionAssignment(production_assignment_id:number): Promise <any>;
 
     getAddedUsers(): Promise<any>;
-    updateAddedUser(user:any): Promise<any>;
     getAddedUserByEmail(email:string): Promise<any>;
+    updateAddedUser(user:any): Promise<any>;
+    
     //addProduction(object: any): Promise<any>;
     //updateProduction(object: any): Promise<any>;
     //addProductionAssignment(object: any): Promise<any>;
@@ -221,6 +226,20 @@ export class ApisRepository implements IApisRepository {
         return result;
     }
 
+    async getProductionUsersX(production_id:number): Promise<any> {
+        //const data = user.toPersistence();
+
+        const [result] = await this.db.query<RowDataPacket[]>(
+            `SELECT production_assignments.status AS assignment_status, production_assignments.created_timestamp AS assignment_created_timestamp, production_assignments.ended_timestamp AS assignment_ended_timestamp,
+            users.* 
+            FROM production_assignments 
+            LEFT JOIN users ON users.user_id=production_assignments.user_id 
+            WHERE production_assignments.production_id=${production_id}`
+        );
+
+        return result;
+    }
+
     async getProductionActivity(production_id:number): Promise<any> {
         //const data = user.toPersistence();
 
@@ -379,6 +398,16 @@ export class ApisRepository implements IApisRepository {
         return result;
     }
 
+    async deleteReportAction(report_action_id:number): Promise<any> {
+        //const data = user.toPersistence();
+
+         const [result] = await this.db.query<RowDataPacket[]>(
+            `DELETE FROM report_actions WHERE report_action_id=${report_action_id}`
+        );
+
+        return result;
+    }
+
     async getGoogleUsers(): Promise<any> {
         const [result] = await this.db.query<RowDataPacket[]>(
             `SELECT * FROM google_data_snapshots ORDER BY timestamp DESC LIMIT 1`
@@ -497,6 +526,19 @@ export class ApisRepository implements IApisRepository {
 
         return result;
     }
+
+    async addUser(object: any): Promise<any> {
+        //const data = user.toPersistence();
+        const [result] = await this.db.query<ResultSetHeader>(
+            `INSERT users SET ?`,
+            [object]
+        );
+
+        const header = result as ResultSetHeader;
+        return header.affectedRows > 0 ? header.insertId : undefined;
+
+    }
+
 
 
 }

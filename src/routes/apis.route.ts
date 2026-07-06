@@ -54,5 +54,10 @@ export class ApisRoute implements Routes {
 
     this.router.get(`${this.path}/getBulkUploadRun`, this.apisController.getBulkUploadRun);
     this.router.post(`${this.path}/createBulkUploadRun`, this.apisController.createBulkUploadRun);
+
+    this.router.get(`${this.path}/getProductionHistory`, this.apisController.getProductionHistory);
+    this.router.post(`${this.path}/addUser`, this.apisController.addUser);
+    this.router.post(`${this.path}/sendgridWebhook`, this.apisController.sendgridWebhook);
+    this.router.get(`${this.path}/mailing`, this.apisController.mailing);
   }
 }

@@ -23,6 +23,9 @@ import { GoogleRoute } from './routes/google.route';
 import { EmailNotificationsRepository } from './repositories/email_notifications.repository';
 import { SendGridService } from './services/sendgrid.service';
 import { EmailNotificationsService } from './services/email_notifications';
+import { ApisRepository } from './repositories/apis.repository';
+import { ApisService } from './services/apis.service';
+import { DocsService } from './services/docs.service';
 
 //container.registerInstance(UsersRepository, new UsersRepository());
 
@@ -38,6 +41,8 @@ const routes = [
 ];
 
 var commonService = new CommonService;
+var emailNotificationsRepository = new EmailNotificationsRepository(pool);
+var emailNotificationsService = new EmailNotificationsService(emailNotificationsRepository);
 var googleRepository = new GoogleRepository(pool);
 var emailNotificationsRepository = new EmailNotificationsRepository(pool);
 
@@ -48,7 +53,13 @@ const googleService = new GoogleService(googleRepository, commonService, sendgri
 
 var airtableRepository = new AirtableRepository(pool);
 const airtableService = new AirtableService(airtableRepository);
-const appInstance = new App(routes, '', googleService, airtableService);
+
+var apisRepository = new ApisRepository(pool);
+const apisService = new ApisService(apisRepository, commonService, sendgridService, emailNotificationsService);
+
+const docsService = new DocsService(apisService, commonService, googleService);
+
+const appInstance = new App(routes, '', googleService, airtableService, apisService, docsService);
 
 const server = appInstance.listen();
 

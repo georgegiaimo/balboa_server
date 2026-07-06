@@ -140,5 +140,24 @@ export class GoogleController {
         }
     };
 
+    public deleteUsersBulk = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+
+            var user_ids = req.body;
+            var run_id = Number(req.query.id);
+
+            if (!user_ids) {
+                return res.status(400).json({ message: 'User ids required. Expected an array of user ids.' });
+            }
+            // Controller calls the service
+            const result = await this.googleService.deleteUsersBulk(user_ids, run_id);
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
 
 }

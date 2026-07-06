@@ -44,18 +44,22 @@ export class ReportsService {
             { domain: 'seriescrew', users: 0 },
             { domain: 'mount22prod', users: 0 },
         ]
+        
         users.forEach((x:any) => {
-            if (x.production_email.indexOf('crew-tv') > -1) domains[0].users += 1;
-            if (x.production_email.indexOf('seriescrew') > -1) domains[1].users += 1;
-            if (x.production_email.indexOf('mount22prod') > -1) domains[2].users += 1;
+            if (x.production_email && x.status == 'active') {
+                if (x.production_email.indexOf('crew-tv') > -1) domains[0].users += 1;
+                if (x.production_email.indexOf('seriescrew') > -1) domains[1].users += 1;
+                if (x.production_email.indexOf('mount22prod') > -1) domains[2].users += 1;
+            }
         })
+        
 
         domains = domains.sort((a:any, b:any) => { return b.users - a.users });
 
         //check productions per domain
         domains.forEach((domain: any) => {
 
-            var usersx = users.filter((x: any) => { return x.production_email.indexOf(domain.domain) > -1; });
+            var usersx = users.filter((x: any) => { return x.status == 'active' && (x.production_email ? (x.production_email.indexOf(domain.domain) > -1):false); });
             var users_ids = usersx.map((x: any) => { return x.user_id; });
 
             var domain_productions = [] as any[];

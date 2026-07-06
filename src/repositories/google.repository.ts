@@ -4,34 +4,37 @@ import { RowDataPacket, ResultSetHeader } from 'mysql2';
 //import { User, type UserPersistenceData } from '@entities/user.entity';
 
 export interface IGoogleRepository {
-  //getConfiguration(): Promise<any>;
-  addUser(object:any): Promise<any>;
- getUsers(): Promise<any>;
- updateUser(object:any): Promise<any>;
- getProductions(): Promise<any>;
+    //getConfiguration(): Promise<any>;
+    addUser(object: any): Promise<any>;
+    getUsers(): Promise<any>;
+    updateUser(object: any): Promise<any>;
+    getUser(user_id: number): Promise<any>;
+    getProductions(): Promise<any>;
 
-  addProduction(object:any): Promise<any>;
-    updateProduction(object:any): Promise<any>;
-    addProductionAssignment(object:any): Promise<any>;
-    getUserAssignments(id:number): Promise<any>;
-    updateProductionAssignment(object:any): Promise<any>;
-    addHistoricalData(object:any): Promise<any>;
+    addProduction(object: any): Promise<any>;
+    updateProduction(object: any): Promise<any>;
+    addProductionAssignment(object: any): Promise<any>;
+    getUserAssignments(id: number): Promise<any>;
+    updateProductionAssignment(object: any): Promise<any>;
+    addHistoricalData(object: any): Promise<any>;
 
     getProductionAssignments(): Promise<any>;
-    deleteProductionAssignment(id:number): Promise<any>;
+    deleteProductionAssignment(id: number): Promise<any>;
 
-    addSnapshot(object:any): Promise<any>;
-    addReportAction(object:any): Promise<any>;
+    addSnapshot(object: any): Promise<any>;
+    addReportAction(object: any): Promise<any>;
     getReportActions(): Promise<any>;
-    deleteReportAction(id:number): Promise<any>;
+    deleteReportAction(id: number): Promise<any>;
 
-    saveNewUser(data:any): Promise<any>;
-    getNewUser(email:string): Promise<any>;
-  //findById(id: string): Promise<User | undefined>;
-  //findByEmail(email: string): Promise<User | undefined>;
-  //save(user: User): Promise<User>;
-  //update(id: string, user: User): Promise<User | undefined>;
-  //delete(id: string): Promise<boolean>;
+    saveNewUser(data: any): Promise<any>;
+    getNewUser(email: string): Promise<any>;
+
+    updateBulkUploadRun(object:any): Promise<any>;
+    //findById(id: string): Promise<User | undefined>;
+    //findByEmail(email: string): Promise<User | undefined>;
+    //save(user: User): Promise<User>;
+    //update(id: string, user: User): Promise<User | undefined>;
+    //delete(id: string): Promise<boolean>;
 }
 
 @singleton()
@@ -58,6 +61,16 @@ export class GoogleRepository implements IGoogleRepository {
 
         const header = result as ResultSetHeader;
         return header.affectedRows > 0 ? header.insertId : undefined;
+    }
+
+    async getUser(user_id:number): Promise<any> {
+        //const data = user.toPersistence();
+
+        const [result] = await this.db.query<RowDataPacket[]>(
+            `SELECT * FROM users WHERE user_id=${user_id}`
+        );
+
+        return result;
     }
 
     async getUsers(): Promise<any> {
@@ -248,6 +261,17 @@ export class GoogleRepository implements IGoogleRepository {
 
         const [result] = await this.db.query<RowDataPacket[]>(
             `SELECT * FROM added_users WHERE personal_email='${email}'`
+        );
+
+        return result;
+    }
+
+    async updateBulkUploadRun(object:any): Promise<any> {
+        //const data = user.toPersistence();
+
+        const [result] = await this.db.query<RowDataPacket[]>(
+            `UPDATE bulk_upload_runs SET ? WHERE bulk_upload_run_id = ${object.bulk_upload_run_id}`,
+            [object]
         );
 
         return result;

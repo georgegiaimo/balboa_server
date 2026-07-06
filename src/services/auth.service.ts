@@ -47,6 +47,8 @@ export class AuthService {
     var token = this.commonService.createToken();
     var hashed_password = await this.hashPassword(user_data.password);
 
+    //if role is 'production-admin' get production id
+
     //const newUser = await User.create(userData);
     var user_object = {
       first_name: user_data.first_name,
@@ -57,13 +59,16 @@ export class AuthService {
       password: hashed_password,
       status: user_data.status,
       password_reset_token: token,
-      password_reset_token_expiration: Date.now() + (1000 * 60 * 60 * 24 * 3)
+      password_reset_token_expiration: Date.now() + (1000 * 60 * 60 * 24 * 3),
+      production_id: user_data.production_id
     }
 
     var response = await this.usersRepository.save(user_object);
 
     //send notification email
-    await this.sendgridService.notificationOfAdminInvitation(user_object);
+    var user_objectx = JSON.parse(JSON.stringify(user_object));
+    user_objectx.production = user_data.production;
+    await this.sendgridService.notificationOfAdminInvitation(user_objectx);
 
     return response;
   }

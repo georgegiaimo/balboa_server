@@ -494,5 +494,62 @@ export class ApisController {
         }
     };
 
+    public getProductionHistory = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+
+            var production_id = Number(req.query.id);         
+
+            // Controller calls the service
+            const result = await this.apisService.getProductionHistory(production_id);
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
+    public addUser = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+
+            var data = req.body; 
+            // Controller calls the service
+            const result = await this.apisService.addUser(data);
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
+    public sendgridWebhook = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+
+            console.log('sendgrid webhook');
+            var data = req.body; 
+            // Controller calls the service
+            const result = await this.apisService.sendgridWebhook(data);
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
+    public mailing = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+
+            // Controller calls the service
+            const result = await this.apisService.mailing();
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
 
 }

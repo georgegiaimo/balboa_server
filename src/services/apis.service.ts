@@ -41,6 +41,9 @@ export class ApisService {
                 return coordinators_ids.indexOf(x.coordinator_id) > -1;
             });
 
+            if (production.start_date) production.start_date_timestamp = this.commonService.getNoonEpoch(production.start_date);
+            else production.start_date_timestamp = 0;
+
             production.coordinators = production_coordinators;
 
         });
@@ -58,14 +61,18 @@ export class ApisService {
         var productionx = await this.apisRepository.getProductionDetails(production_id);
         var production = productionx[0];
         var coordinators = await this.apisRepository.getProductionCoordinators(production_id);
-        var users = await this.apisRepository.getProductionUsers(production_id);
+        var users = await this.apisRepository.getProductionUsersX(production_id);
         var activity = await this.apisRepository.getProductionActivity(production_id);
+
+        console.log('---- users', users);
 
         //format date
         users.forEach((x:any) => {
-           x.last_login_date = this.commonService.getDate(x.last_login_time);
+           //x.last_login_date = this.commonService.getDate(x.last_login_time);
            //calculate pct usage
-           x.usage_percentage = Math.round((x.total_used_mb/x.limit_mb)*100);
+           //x.usage_percentage = Math.round((x.total_used_mb/x.limit_mb)*100);
+           x.assignment_start_date = this.commonService.getDate(x.assignment_created_timestamp);
+           x.assignment_end_date = this.commonService.getDate(x.assignment_ended_timestamp);
         });
 
         //remove user duplicates
@@ -73,7 +80,9 @@ export class ApisService {
 
         activity.forEach((x:any) => {
             x.date = this.commonService.getDate(x.timestamp);
-        })
+        });
+
+        activity = activity.sort((a:any,b:any) => { return b.timestamp - a.timestamp });
 
         return {
             production: production,
@@ -81,6 +90,21 @@ export class ApisService {
             coordinators: coordinators,
             activity: activity
         }
+    }
+
+    public async getProductionHistory(production_id:number){
+        var activity = await this.apisRepository.getProductionUsersX(production_id);
+        //console.log('activity', activity);
+        activity.forEach((x:any) => {
+            x.assignment_start_date = this.commonService.getDate(x.assignment_created_timestamp);
+            x.assignment_end_date = this.commonService.getDate(x.assignment_ended_timestamp);
+        });
+
+        var history = this.getMonthlyAssignmentTimeline(activity);
+
+        return {
+            history: history
+        };
     }
 
     public async updateProduction(object:any){
@@ -103,9 +127,9 @@ export class ApisService {
         });
 
         if (added_user){
-            if (added_user.notification_sent_timestamp) added_user.notification_date = this.commonService.getDate(added_user.notification_sent_timestamp);
-            if (added_user.reminder_one_sent_timestamp) added_user.reminder1_date = this.commonService.getDate(added_user.reminder_one_sent_timestamp);
-            if (added_user.reminder_two_sent_timestamp) added_user.reminder2_date = this.commonService.getDate(added_user.reminder_two_sent_timestamp);
+            if (added_user.notification_sendgrid_message_delivered) added_user.notification_date = this.commonService.getDate(added_user.notification_sent_timestamp);
+            if (added_user.reminder_one_sendgrid_message_delivered) added_user.reminder1_date = this.commonService.getDate(added_user.reminder_one_sent_timestamp);
+            if (added_user.reminder_two_sendgrid_message_delivered) added_user.reminder2_date = this.commonService.getDate(added_user.reminder_two_sent_timestamp);
         }
 
         user.last_login_date = this.commonService.getDate(user.last_login_time);
@@ -796,8 +820,8 @@ export class ApisService {
             user_id: data.user_id,
             production_id: data.production_id,
             notes: data.notes,
-            created_timestamp: this.commonService.getNoonEpoch(data.start_date),
-            ended_timestamp: this.commonService.getNoonEpoch(data.end_date),
+            created_timestamp: data.start_date ? this.commonService.getNoonEpoch(data.start_date):null,
+            ended_timestamp: data.end_date ? this.commonService.getNoonEpoch(data.end_date):null,
             status: data.status
         };
         var production_assignment_id = this.apisRepository.addProductionAssignment(production_assignment);
@@ -831,6 +855,8 @@ export class ApisService {
 
             if (user.has_logged_in) continue;
 
+            var user_has_logged_in = false;
+
             if (!user.user_id){
                 //find user and assign user id
                 var record = users.find((x:any) => { return x.personal_email.toLowerCase() == user.personal_email.toLowerCase()});
@@ -841,25 +867,56 @@ export class ApisService {
                         has_logged_in: record.last_login_time > 0
                     }
 
+                    if (record.last_login_time > 0) user_has_logged_in = true;
+
                     await this.apisRepository.updateAddedUser(object);
                 }
             }
 
-            else if(!user.reminder_one_sent_timestamp && user.created_timestamp > (1000 * 60 * 60 * 24 * 3)){
-                //send reminder 1
-                this.sendgridService.accountCreatedReminder1(user);
-                this.emailNotificationsService.saveEmailNotification({
-                    personal_email: user.personal_email,
-                    reminder_one_sent_timestamp: Date.now()
-                });
+            else{
+                //confirm user hasnt logged in
+                var record = users.find((x:any) => { return x.user_id == user.user_id});
+                if (record){
+                    var object = {
+                        added_user_id: user.added_user_id,
+                        user_id: record.user_id,
+                        has_logged_in: record.last_login_time > 0
+                    }
+
+                    if (record.last_login_time > 0) user_has_logged_in = true;
+
+                    await this.apisRepository.updateAddedUser(object);
+                }
+                
             }
 
-            else if(user.reminder_one_sent_timestamp && !user.reminder_two_sent_timestamp && user.created_timestamp > (1000 * 60 * 60 * 24 * 8)){
-                //send reminder 2
-                this.sendgridService.accountCreatedReminder2(user);
+            if (user_has_logged_in) continue;
+
+            //verify status of user before sending email, if status equals 'removed' do not send email notifications anymore
+            var record = users.find((x:any) => { return x.personal_email.toLowerCase() == user.personal_email.toLowerCase()});
+            if (!record || (record && record.status == 'removed')) continue;
+            
+
+            if(!user.reminder_one_sendgrid_message_delivered && (Date.now() > (user.timestamp_created + (1000 * 60 * 60 * 24 * 3)))){
+                //send reminder 1
+                var sendgrid_response = await this.sendgridService.accountCreatedReminder1(user);
+                var sendgrid_message_id = sendgrid_response.response[0].headers['x-message-id'];
+                
                 this.emailNotificationsService.saveEmailNotification({
                     personal_email: user.personal_email,
-                    reminder_two_sent_timestamp: Date.now()
+                    reminder_one_sendgrid_message_id: sendgrid_message_id
+                });
+
+            }
+
+            else if(user.reminder_one_sendgrid_message_delivered && !user.reminder_two_sendgrid_message_delivered && (Date.now() > (user.timestamp_created + (1000 * 60 * 60 * 24 * 6)))){
+                //send reminder 2
+                var sendgrid_response = await this.sendgridService.accountCreatedReminder2(user);
+                var sendgrid_message_id = sendgrid_response.response[0].headers['x-message-id'];
+
+                this.emailNotificationsService.saveEmailNotification({
+                    personal_email: user.personal_email,
+                    reminder_two_sendgrid_message_id: sendgrid_message_id
                 })
             }
         }
@@ -902,6 +959,339 @@ export class ApisService {
         var run = runx[0];
         
         return run;
+    }
+
+  getMonthlyAssignmentTimeline(assignments: any[]){
+  if (!assignments.length) return [];
+
+  const now = new Date();
+  // Standardize to the first of the current month for boundary comparison
+  const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  // 1. Find the earliest start date and the latest end date
+  let earliest = new Date();
+  let latest = new Date(currentMonthStart);
+
+  const parsed = assignments.map(a => {
+    const start = new Date(a.assignment_start_date);
+    // If end date is missing, treat it as "ongoing" (current month)
+    const end = a.assignment_end_date ? new Date(a.assignment_end_date) : new Date(now);
+
+    if (start < earliest) earliest = new Date(start);
+    if (end > latest) latest = new Date(end);
+
+    return { start, end, first_name:a.first_name, last_name:a.last_name, assignment_start_date:a.assignment_start_date, assignment_end_date:a.assignment_end_date };
+  });
+
+  //console.log('parsed',parsed);
+
+  // 2. Normalize boundaries to the first of the month
+  let cursor = new Date(earliest.getFullYear(), earliest.getMonth(), 1);
+  const endLimit = new Date(latest.getFullYear(), latest.getMonth(), 1);
+
+  const timeline: any[] = [];
+
+  // 3. Iterate through months
+  while (cursor <= endLimit) {
+    //console.log('cursor', cursor);
+    const monthStart = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
+    const monthEnd = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0);
+
+    // 4. Count assignments active during this specific month window
+    const activeCount = parsed.filter(({ start, end }) => {
+      // Overlap logic: Start is before month ends AND End is after month starts
+      return start <= monthEnd && (end >= monthStart || isNaN(end.getTime()));
+    }).length;
+
+    timeline.push({
+      month: cursor.toLocaleString('en-US', { month: 'long' }),
+      year: cursor.getFullYear(),
+      count: activeCount,
+      added: parsed.filter((x:any) => { return x.start <= monthEnd && x.start >= monthStart}),
+      removed: parsed.filter((x:any) => { return x.end <= monthEnd && x.end >= monthStart}),
+      change: parsed.filter((x:any) => { return x.start <= monthEnd && x.start >= monthStart}).length - parsed.filter((x:any) => { return x.end <= monthEnd && x.end >= monthStart}).length
+    });
+
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+
+  //filter months with 0 users
+  var timelinex = timeline.filter((x:any) => { return x.count > 0 && x.change != 0;})
+
+  return timelinex;
+};
+
+    public async addUser(data: any) {
+
+        var user_object: any = {
+            first_name: data.first_name,
+            last_name: data.last_name,
+            personal_email: data.personal_email,
+            creation_time: Date.now(),
+            is_identity_client: data.is_identity_client,
+            notes: data.notes,
+            status: data.status? data.status:null,
+            production_email: data.production_email ? data.prodution_email:null
+        }
+
+        var response = await this.apisRepository.addUser(user_object);
+        return response;
+
+    }
+
+    public async sendgridWebhook(data: any) {
+
+        for(let item of data){
+
+            await this.storeEmailNotification(item);
+            //console.log('email',item.email);
+            //console.log('sg-message-id', item.sg_message_id);
+            //console.log('event', item.event);  
+        };
+
+    }
+
+    async storeEmailNotification(event:any) {
+
+        try{
+        console.log('apis.service storeEmailNotification', event);
+
+        //get added_user record
+        var added_userx = await this.apisRepository.getAddedUserByEmail(event.email);
+        var added_user = added_userx[0];
+        var object;
+
+        var sg_message_id = event.sg_message_id.split('.')[0];
+
+        console.log('xxxx', added_user, sg_message_id);
+
+        if (added_user.notification_sendgrid_message_id == sg_message_id){
+            if (event.event == 'delivered'){
+                object = {
+                    added_user_id: added_user.added_user_id,
+                    notification_sendgrid_message_delivered: Date.now()
+                }
+            }
+            else if (event.event == 'open'){
+                object = {
+                    added_user_id: added_user.added_user_id,
+                    notification_sendgrid_message_opened: Date.now()
+                }
+            }
+            else if (event.event == 'click'){
+                object = {
+                    added_user_id: added_user.added_user_id,
+                    notification_sendgrid_message_clicked: Date.now()
+                }
+            }
+            else if (event.event == 'bounce'){
+                object = {
+                    added_user_id: added_user.added_user_id,
+                    notification_sendgrid_message_bounced: Date.now()
+                }
+            }
+        }
+        else if (added_user.reminder_one_sendgrid_message_id == sg_message_id){
+            if (event.event == 'delivered'){
+                object = {
+                    added_user_id: added_user.added_user_id,
+                    reminder_one_sendgrid_message_delivered: Date.now()
+                }
+            }
+            else if (event.event == 'open'){
+                object = {
+                    added_user_id: added_user.added_user_id,
+                    reminder_one_sendgrid_message_opened: Date.now()
+                }
+            }
+            else if (event.event == 'click'){
+                object = {
+                    added_user_id: added_user.added_user_id,
+                    reminder_one_sendgrid_message_clicked: Date.now()
+                }
+            }
+            else if (event.event == 'bounce'){
+                object = {
+                    added_user_id: added_user.added_user_id,
+                    reminder_one_sendgrid_message_bounced: Date.now()
+                }
+            }
+        }
+        else if (added_user.reminder_two_sendgrid_message_id == sg_message_id){
+            if (event.event == 'delivered'){
+                object = {
+                    added_user_id: added_user.added_user_id,
+                    reminder_two_sendgrid_message_delivered: Date.now()
+                }
+            }
+            else if (event.event == 'open'){
+                object = {
+                    added_user_id: added_user.added_user_id,
+                    reminder_two_sendgrid_message_opened: Date.now()
+                }
+            }
+            else if (event.event == 'click'){
+                object = {
+                    added_user_id: added_user.added_user_id,
+                    reminder_two_sendgrid_message_clicked: Date.now()
+                }
+            }
+            else if (event.event == 'bounce'){
+                object = {
+                    added_user_id: added_user.added_user_id,
+                    reminder_two_sendgrid_message_bounced: Date.now()
+                }
+            }
+        }
+
+        if (object) await this.apisRepository.updateAddedUser(object);
+
+        }
+        catch(err){
+            console.log('error storing email notification - ', err);
+        }
+
+    /*
+    tables.getByField('email_notifications', 'sendgrid_message_id', sg_message_id).then(function (data) {
+        var record = data[0];
+
+        //see if a record for that message id exists
+        //var record = records.find(x => { return x.sendgrid_message_id == sg_message_id });
+
+        //record already exists
+        if (record) {
+            if (event.event == 'delivered') {
+                var object = {
+                    email_notification_id: record.email_notification_id,
+                    delivered: true,
+                    delivered_timestamp: Date.now()
+                }
+
+                tables.updateItem('email_notifications', object, 'email_notification_id');
+
+                //update vendor collection record
+                //tables.updateCollectionRecord(record);
+
+            }
+
+            else if (event.event == 'open') {
+                var object = {
+                    email_notification_id: record.email_notification_id,
+                    opened: true,
+                    opened_timestamp: Date.now()
+                }
+
+                tables.updateItem('email_notifications', object, 'email_notification_id');
+            }
+        }
+
+    })
+    */
+}
+
+    public async mailing(){
+        var added_users = await this.apisRepository.getAddedUsers();
+
+        var emails:any[] = [];
+        added_users.forEach((x:any) => {
+            if (x.notification_sendgrid_message_id) emails.push({
+                user_id: x.user_id,
+                name: x.first_name + ' ' + x.last_name,
+                personal_email: x.personal_email,
+                message: 'Notification',
+                delivered: x.notification_sendgrid_message_delivered ? true:false,
+                opened: x.notification_sendgrid_message_opened ? true:false,
+                clicked: x.notification_sendgrid_message_clicked ? true:false,
+                bounced: x.notification_sendgrid_message_bounced ? true:false,
+                delivered_date: x.notification_sendgrid_message_delivered ? this.commonService.getDate(x.notification_sendgrid_message_delivered):'',
+                opened_date: x.notification_sendgrid_message_opened ? this.commonService.getDate(x.notification_sendgrid_message_opened):'',
+                clicked_date: x.notification_sendgrid_message_clicked ? this.commonService.getDate(x.notification_sendgrid_message_clicked):'',
+                bounced_date: x.notification_sendgrid_message_bounced ? this.commonService.getDate(x.notification_sendgrid_message_bounced):'',
+                org_unit_path: x.org_unit_path
+            });
+
+            if(x.reminder_one_sendgrid_message_id) emails.push({
+                user_id: x.user_id,
+                name: x.first_name + ' ' + x.last_name,
+                personal_email: x.personal_email,
+                message: 'Reminder One',
+                delivered: x.reminder_one_sendgrid_message_delivered ? true:false,
+                opened: x.reminder_one_sendgrid_message_opened ? true:false,
+                clicked: x.reminder_one_sendgrid_message_clicked ? true:false,
+                bounced: x.reminder_one_sendgrid_message_bounced ? true:false,
+                delivered_date: x.reminder_one_sendgrid_message_delivered ? this.commonService.getDate(x.reminder_one_sendgrid_message_delivered):'',
+                opened_date: x.reminder_one_sendgrid_message_opened ? this.commonService.getDate(x.reminder_one_sendgrid_message_opened):'',
+                clicked_date: x.reminder_one_sendgrid_message_clicked ? this.commonService.getDate(x.reminder_one_sendgrid_message_clicked):'',
+                bounced_date: x.reminder_one_sendgrid_message_bounced ? this.commonService.getDate(x.reminder_one_sendgrid_message_bounced):'',
+                org_unit_path: x.org_unit_path
+            });
+
+            if(x.reminder_two_sendgrid_message_id) emails.push({
+                user_id: x.user_id,
+                name: x.first_name + ' ' + x.last_name,
+                personal_email: x.personal_email,
+                message: 'Reminder Two',
+                delivered: x.reminder_two_sendgrid_message_delivered ? true:false,
+                opened: x.reminder_two_sendgrid_message_opened ? true:false,
+                clicked: x.reminder_two_sendgrid_message_clicked ? true:false,
+                bounced: x.reminder_two_sendgrid_message_bounced ? true:false,
+                delivered_date: x.reminder_two_sendgrid_message_delivered ? this.commonService.getDate(x.reminder_two_sendgrid_message_delivered):'',
+                opened_date: x.reminder_two_sendgrid_message_opened ? this.commonService.getDate(x.reminder_two_sendgrid_message_opened):'',
+                clicked_date: x.reminder_two_sendgrid_message_clicked ? this.commonService.getDate(x.reminder_two_sendgrid_message_clicked):'',
+                bounced_date: x.reminder_two_sendgrid_message_bounced ? this.commonService.getDate(x.reminder_two_sendgrid_message_bounced):'',
+                org_unit_path: x.org_unit_path
+            });
+        });
+
+        return emails;
+    }
+
+    public async getProductionAssignments(){
+        var assignments = this.apisRepository.getProductionAssignments();
+        return assignments;
+    }
+
+    public async temp(){
+        console.log('@temp');
+        
+        var users = await this.apisRepository.getUsers();
+        console.log('users,', users.length);
+        var assignments = await this.apisRepository.getProductionAssignments();
+        console.log('assignments,', assignments.length);
+        var report_actions = await this.apisRepository.getReportActions();
+        var ctr = 0;
+
+        for (let item of report_actions){
+            //find user
+            var record = users.find((x:any) => { return x.user_id == item.user_id });
+            if (!record){
+                ctr+=1;
+                console.log('ctr', ctr);
+                //delete assignment
+                //await this.apisRepository.deleteReportAction(item.report_action_id);
+            }
+        }
+
+        /*
+        for (let user of users){
+            var assignmentsx = assignments.filter((x:any) => { return x.user_id == user.user_id});
+            //console.log('assignments.length',assignmentsx.length);
+            //console.log('user',user);
+            //console.log('assignmentx', assignmentsx);
+            if (assignmentsx.length == 1){
+                
+                var assignment_object = {
+                    production_assignment_id: assignmentsx[0].production_assignment_id,
+                    created_timestamp: user.creation_time
+                }
+
+                //console.log('assignemnt_object', assignment_object);
+
+                await this.apisRepository.updateProductionAssignment(assignment_object);
+                console.log(ctr+=1);
+            }
+        }
+        */
     }
     
 }

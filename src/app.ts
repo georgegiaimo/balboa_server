@@ -20,6 +20,8 @@ import { GoogleService } from '@services/google.service';
 import { AirtableService } from '@services/airtable.service';
 
 import { initializeCronJobs } from './jobs';
+import { ApisService } from './services/apis.service';
+import { DocsService } from './services/docs.service';
 
 class App {
   public app: express.Application;
@@ -31,6 +33,8 @@ class App {
     apiPrefix = '',
     public googleService:GoogleService,
     public airtableService: AirtableService,
+    public apisService: ApisService,
+    public docsService: DocsService
   ) {
     this.app = express();
     this.env = ENVIRONMENT || 'development';
@@ -45,11 +49,13 @@ class App {
     //console.log('googleService', this.googleService);
     //this.googleService.getAllUsersFromDirectory();
     //this.googleService.syncGoogleData();
-    //this.googleService.temp();
+    //this.apisService.temp();
     //this.googleService.deleteDuplicateAssignments();
     //this.googleService.deleteDuplicateActivityReport();
     //this.airtableService.getAirtableDataProductions();
     //this.googleService.updateUserUsage();
+    //this.apisService.accountLoginReminders();
+    //this.docsService.getPastUsers();
   }
 
   public listen() {
