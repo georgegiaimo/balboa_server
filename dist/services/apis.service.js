@@ -176,6 +176,7 @@ let ApisService = class ApisService {
         return admins;
     }
     async updateAdmin(object) {
+        console.log('@updateAdmin', object);
         var admin_id = await this.apisRepository.updateAdmin(object);
         return admin_id;
     }

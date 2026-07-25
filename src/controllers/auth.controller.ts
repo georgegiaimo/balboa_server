@@ -11,6 +11,9 @@ export class AuthController {
   constructor(@inject(AuthService) private readonly authService: AuthService) {}
 
   public signUp = asyncHandler(async (req: Request, res: Response) => {
+
+    console.log('CCCCC', req.body);
+
     const userData: any = req.body;
     const signUpUserData = await this.authService.signup(userData);
 

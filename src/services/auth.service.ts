@@ -9,13 +9,15 @@ import type { IUsersRepository } from '@repositories/users.repository';
 import bcrypt from 'bcrypt';
 import { SendGridService } from './sendgrid.service';
 import { CommonService } from './common.service';
+import { ApisRepository, IApisRepository } from '@/repositories/apis.repository';
 
 @injectable()
 export class AuthService {
   constructor(
     @inject(UsersRepository) private usersRepository: IUsersRepository,
     @inject(SendGridService) public sendgridService: SendGridService,
-    @inject(CommonService) public commonService: CommonService
+    @inject(CommonService) public commonService: CommonService,
+    @inject(ApisRepository) private apisRepository: IApisRepository,
   ) { }
 
   private createToken(user: any): TokenData {
@@ -47,9 +49,6 @@ export class AuthService {
     var token = this.commonService.createToken();
     var hashed_password = await this.hashPassword(user_data.password);
 
-    //if role is 'production-admin' get production id
-
-    //const newUser = await User.create(userData);
     var user_object = {
       first_name: user_data.first_name,
       last_name: user_data.last_name,
@@ -65,9 +64,30 @@ export class AuthService {
 
     var response = await this.usersRepository.save(user_object);
 
+    //create executive-admin assignments
+    if (user_data.role == 'executive-admin'){
+      var productions = await this.apisRepository.getProductions();
+        for (let productionx of user_data.productions){
+          //find production
+          var recordx = productions.find((x:any) => { return x.name == productionx});
+          if (recordx){
+
+            var assignment_object = {
+              admin_id: response.insertId,
+              production_id: recordx.production_id
+            }
+
+            await this.apisRepository.addExecutiveAdminProductionAssignment(assignment_object);
+
+          }
+        }
+    }
+
+
     //send notification email
     var user_objectx = JSON.parse(JSON.stringify(user_object));
     user_objectx.production = user_data.production;
+    user_objectx.productions = user_data.productions;
     await this.sendgridService.notificationOfAdminInvitation(user_objectx);
 
     return response;
@@ -80,8 +100,6 @@ export class AuthService {
 
     var userx = await this.usersRepository.findByEmail(loginData.email) as any;
     var user = userx[0];
-
-    console.log('userx', userx);
 
     if (!user) throw new HttpException(401, `Invalid email or password.`);
 
@@ -100,6 +118,12 @@ export class AuthService {
     };
 
     await this.usersRepository.updateUser(object);
+
+    //if user is executive admin, get assigned productions
+    if (user.role == 'executive-admin'){
+      var assignments = await this.apisRepository.getExecutiveAdminProductionAssignments(user.admin_id);
+      user.assignments = assignments;
+    }
 
     return { cookie, user: user };
   }

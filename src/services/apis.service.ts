@@ -64,8 +64,6 @@ export class ApisService {
         var users = await this.apisRepository.getProductionUsersX(production_id);
         var activity = await this.apisRepository.getProductionActivity(production_id);
 
-        console.log('---- users', users);
-
         //format date
         users.forEach((x:any) => {
            //x.last_login_date = this.commonService.getDate(x.last_login_time);
@@ -270,8 +268,15 @@ export class ApisService {
 
     public async updateAdmin(object:any){
 
-        var admin_id = await this.apisRepository.updateAdmin(object);
+        var admin_id = this.apisRepository.updateAdmin(object);
         return admin_id;
+    }
+
+    public async deleteAdmin(object:any){
+
+        var admin_id = await this.apisRepository.deleteAdmin(object.admin_id);
+        return admin_id;
+
     }
 
     public async getCoordinators(){
@@ -824,7 +829,7 @@ export class ApisService {
             ended_timestamp: data.end_date ? this.commonService.getNoonEpoch(data.end_date):null,
             status: data.status
         };
-        var production_assignment_id = this.apisRepository.addProductionAssignment(production_assignment);
+        var production_assignment_id = await this.apisRepository.addProductionAssignment(production_assignment);
         return production_assignment_id;
     }
     async updateProductionAssignment(data:any) {
@@ -837,13 +842,13 @@ export class ApisService {
             ended_timestamp: this.commonService.getNoonEpoch(data.end_date),
             status: data.status
         };
-        var production_assignment_id = this.apisRepository.updateProductionAssignment(production_assignment);
+        var production_assignment_id = await this.apisRepository.updateProductionAssignment(production_assignment);
         return production_assignment_id;
     }
 
     async deleteProductionAssignment(data:any) {
         
-        var production_assignment_id = this.apisRepository.deleteProductionAssignment(data.production_assignment_id);
+        var production_assignment_id = await this.apisRepository.deleteProductionAssignment(data.production_assignment_id);
         return production_assignment_id;
     }
 
@@ -1249,6 +1254,125 @@ export class ApisService {
     public async getProductionAssignments(){
         var assignments = this.apisRepository.getProductionAssignments();
         return assignments;
+    }
+
+    public async getProductionsForExecutiveAdmin(admin_id:number){
+        var all_productions = await this.getProductions();
+
+        //get executive admin assignments
+        var executive_admin_assignments = await this.apisRepository.getExecutiveAdminProductionAssignments(admin_id);
+        var production_ids = executive_admin_assignments.map((x:any) => { return x.production_id});
+
+        var productions = all_productions.filter((x:any) => { return production_ids.indexOf(x.production_id) > -1});
+
+        //attach executive admin assignment
+        productions.forEach((x:any) => {
+            var recordx = executive_admin_assignments.find((n:any) => { return n.production_id == x.production_id; });
+            if (recordx) x.exec_admin_production_assignment_id = recordx.exec_admin_production_assignment_id;
+        });
+
+        return productions;
+    }
+
+    public async getUsersForExecutiveAdmin(admin_id:number){
+
+        //get admin record
+        var adminx = await this.apisRepository.getAdmin(admin_id);
+        var admin = adminx[0];
+        console.log('--------', admin);
+
+        //get admin production assignments
+        var executive_admin_assignments = await this.apisRepository.getExecutiveAdminProductionAssignments(admin_id);
+        var executive_admin_production_ids = executive_admin_assignments.map((x:any) => { return x.production_id; });
+
+        var users = await this.apisRepository.getUsers();
+        var assignments = (await this.apisRepository.getProductionAssignments()).filter((x:any) => { return executive_admin_production_ids.indexOf(x.production_id) > -1});
+        var productions = (await this.apisRepository.getProductions()).filter((x:any) => { return executive_admin_production_ids.indexOf(x.production_id) > -1});
+
+        //check assignments for each user
+        users.forEach((user:any) => {
+            var assignmentsx = assignments.filter((x:any) => { return x.user_id == user.user_id });
+            
+            var productionsx = [] as any[];
+            assignmentsx.forEach((n:any) => {
+                var production = productions.find((m:any) => { return m.production_id == n.production_id});
+                //if (!production) console.log('production', production, n);
+                production.assignment_status = n.status;
+                //get start and end dates
+                production.assignment_start_date = this.commonService.getDate(n.created_timestamp);
+                production.assignment_end_date = this.commonService.getDate(n.ended_timestamp);
+                productionsx.push(production);
+            });
+
+            user.productions = productionsx;
+            user.last_login_date = this.commonService.getDate(user.last_login_time);
+            user.creation_date = this.commonService.getDate(user.creation_time);
+            user.usage_percentage = Math.round((user.total_used_mb/user.limit_mb)*100);
+        });
+
+        var usersx = users.filter((x:any) => { return x.productions.length > 0; });
+
+        //console.log('users', users);
+
+        return usersx;
+    }
+
+    public async getActivityForExecutiveAdmin(admin_id:number){
+
+        //get admin record
+        //var adminx = await this.apisRepository.getAdmin(admin_id);
+        //var admin = adminx[0];
+        
+        //get admin production assignments
+        var executive_admin_assignments = await this.apisRepository.getExecutiveAdminProductionAssignments(admin_id);
+        var executive_admin_production_ids = executive_admin_assignments.map((x:any) => { return x.production_id; });
+
+        var activity:any[] = [];
+       for (let item of executive_admin_production_ids){
+        var production = await this.getProductionDetails(item);
+        
+        //console.log('production', production);
+        activity = activity.concat(production.activity);
+       }
+
+        //console.log('users', users);
+
+        return activity;
+    }
+
+    public async addExecutiveAdminProductionAssignment(object:any){
+        var executive_admin_production_assignment_id = await this.apisRepository.addExecutiveAdminProductionAssignment(object);
+        return executive_admin_production_assignment_id;
+    }
+
+    public async deleteExecutiveAdminProductionAssignment(object:any){
+        var executive_admin_production_assignment_id = await this.apisRepository.deleteExecutiveAdminProductionAssignment(object.exec_admin_production_assignment_id);
+        return executive_admin_production_assignment_id;
+    }
+
+    public async getMailingForExecutiveAdmin(admin_id:number){
+
+        //get admin record
+        //var adminx = await this.apisRepository.getAdmin(admin_id);
+        //var admin = adminx[0];
+        var all_mailing = await this.apisRepository.getAddedUsers();
+        
+        //get admin production assignments
+        var executive_admin_assignments = await this.apisRepository.getExecutiveAdminProductionAssignments(admin_id);
+        var executive_admin_production_ids = executive_admin_assignments.map((x:any) => { return x.production_id; });
+
+        var mailing:any[] = [];
+       for (let item of executive_admin_production_ids){
+        var production:any = await this.getProductionDetails(item);
+        
+        var mailingx = all_mailing.filter((x:any) => { return x.org_unit_path == production.org_unit_path});
+        mailing = mailing.concat(mailingx);
+        
+       }
+
+        //console.log('users', users);
+
+        return mailing;
     }
 
     public async temp(){

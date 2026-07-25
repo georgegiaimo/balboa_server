@@ -34,7 +34,9 @@ export class SendGridService {
                 link_url: link,
                 is_admin: data.role == 'admin',
                 is_production_admin: data.role == 'production-admin',
-                production: data.production
+                is_executive_admin: data.role == 'executive-admin',
+                production: data.production,
+                productions: data.productions
             }
         }
 

@@ -164,8 +164,24 @@ export class ApisController {
         try {
             const data = req.body;
 
+            console.log('#$@#$@#$', data);
+
             // Controller calls the service
             const result = await this.apisService.updateAdmin(data);
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
+    public deleteAdmin = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const data = req.body;
+
+            // Controller calls the service
+            const result = await this.apisService.deleteAdmin(data);
 
             // Controller sends the final response
             res.status(200).json({ data: result, message: 'success' });
@@ -543,6 +559,94 @@ export class ApisController {
 
             // Controller calls the service
             const result = await this.apisService.mailing();
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
+    public getProductionsForExecutiveAdmin = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+
+            var admin_id = Number(req.query.id);         
+
+            // Controller calls the service
+            const result = await this.apisService.getProductionsForExecutiveAdmin(admin_id);
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
+    public getUsersForExecutiveAdmin = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+
+            var admin_id = Number(req.query.id);         
+
+            // Controller calls the service
+            const result = await this.apisService.getUsersForExecutiveAdmin(admin_id);
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
+    public getActivityForExecutiveAdmin = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+
+            var admin_id = Number(req.query.id);         
+
+            // Controller calls the service
+            const result = await this.apisService.getActivityForExecutiveAdmin(admin_id);
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
+    public getMailingForExecutiveAdmin = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+
+            var admin_id = Number(req.query.id);         
+
+            // Controller calls the service
+            const result = await this.apisService.getMailingForExecutiveAdmin(admin_id);
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
+    public addExecutiveAdminProductionAssignment = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+
+            var data = req.body; 
+            // Controller calls the service
+            const result = await this.apisService.addExecutiveAdminProductionAssignment(data);
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
+    public deleteExecutiveAdminProductionAssignment = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+
+            var data = req.body; 
+            // Controller calls the service
+            const result = await this.apisService.deleteExecutiveAdminProductionAssignment(data);
 
             // Controller sends the final response
             res.status(200).json({ data: result, message: 'success' });

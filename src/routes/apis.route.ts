@@ -28,6 +28,7 @@ export class ApisRoute implements Routes {
     //this.router.post(`${this.path}/addAdmin`, this.apisController.addAdmin);
     this.router.get(`${this.path}/getAdmin`, this.apisController.getAdmin);
     this.router.post(`${this.path}/updateAdmin`, this.apisController.updateAdmin);
+    this.router.post(`${this.path}/deleteAdmin`, this.apisController.deleteAdmin);
     this.router.get(`${this.path}/getCoordinators`, this.apisController.getCoordinators);
     this.router.get(`${this.path}/getCoordinator`, this.apisController.getCoordinator);
     this.router.get(`${this.path}/getCoordinatorDetails`, this.apisController.getCoordinatorDetails);
@@ -59,5 +60,13 @@ export class ApisRoute implements Routes {
     this.router.post(`${this.path}/addUser`, this.apisController.addUser);
     this.router.post(`${this.path}/sendgridWebhook`, this.apisController.sendgridWebhook);
     this.router.get(`${this.path}/mailing`, this.apisController.mailing);
+
+    this.router.get(`${this.path}/getProductionsForExecutiveAdmin`, this.apisController.getProductionsForExecutiveAdmin);
+    this.router.get(`${this.path}/getUsersForExecutiveAdmin`, this.apisController.getUsersForExecutiveAdmin);
+    this.router.get(`${this.path}/getActivityForExecutiveAdmin`, this.apisController.getActivityForExecutiveAdmin);
+    this.router.get(`${this.path}/getMailingForExecutiveAdmin`, this.apisController.getMailingForExecutiveAdmin);
+
+    this.router.post(`${this.path}/addExecutiveAdminProductionAssignment`, this.apisController.addExecutiveAdminProductionAssignment);
+    this.router.post(`${this.path}/deleteExecutiveAdminProductionAssignment`, this.apisController.deleteExecutiveAdminProductionAssignment);
   }
 }

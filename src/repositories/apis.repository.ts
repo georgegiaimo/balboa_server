@@ -36,6 +36,7 @@ export interface IApisRepository {
     getAdmins(): Promise<any>;
     //addAdmin(admin:any): Promise<any>;
     updateAdmin(admin:any): Promise<any>;
+    deleteAdmin(admin:any): Promise<any>;
     getAdmin(admin_id:number): Promise<any>;
     getAdminByEmail(email:string): Promise<any>;
 
@@ -64,6 +65,11 @@ export interface IApisRepository {
     createBulkUploadRun(): Promise<any>;
     updateBulkUploadRun(object:any): Promise<any>;
     getBulkUploadRun(run_id:number): Promise<any>;
+
+    addExecutiveAdminProductionAssignment(production_assignment:any): Promise<any>;
+    getExecutiveAdminProductionAssignments(admin_id:number): Promise<any>;
+    deleteExecutiveAdminProductionAssignment(exec_admin_production_assignment_id:number): Promise<any>;
+
 }
 
 @singleton()
@@ -321,7 +327,7 @@ export class ApisRepository implements IApisRepository {
         //const data = user.toPersistence();
 
         const [result] = await this.db.query<RowDataPacket[]>(
-            `SELECT admin_id, first_name, last_name, email, role FROM admins WHERE admin_id=${admin_id}`
+            `SELECT admin_id, first_name, last_name, email, role, production_id FROM admins WHERE admin_id=${admin_id}`
         );
 
         return result;
@@ -343,8 +349,18 @@ export class ApisRepository implements IApisRepository {
         //const data = user.toPersistence();
 
         const [result] = await this.db.query<RowDataPacket[]>(
-            `UPDATE admins SET ? WHERE admin_id = ${object.user_id}`,
+            `UPDATE admins SET ? WHERE admin_id = ${object.admin_id}`,
             [object]
+        );
+
+        return result;
+    }
+
+    async deleteAdmin(admin_id:number): Promise<any> {
+        //const data = user.toPersistence();
+
+         const [result] = await this.db.query<RowDataPacket[]>(
+            `DELETE FROM admins WHERE admin_id=${admin_id}`
         );
 
         return result;
@@ -537,6 +553,38 @@ export class ApisRepository implements IApisRepository {
         const header = result as ResultSetHeader;
         return header.affectedRows > 0 ? header.insertId : undefined;
 
+    }
+
+    async addExecutiveAdminProductionAssignment(object: any): Promise<any> {
+        //const data = user.toPersistence();
+         const [result] = await this.db.query<ResultSetHeader>(
+            `INSERT exec_admins_production_assignments SET ?`,
+            [object]
+        );
+
+        const header = result as ResultSetHeader;
+        return header.affectedRows > 0 ? header.insertId : undefined;
+
+    }
+
+    async getExecutiveAdminProductionAssignments(admin_id:number): Promise<any> {
+        //const data = user.toPersistence();
+
+        const [result] = await this.db.query<RowDataPacket[]>(
+            `SELECT * FROM exec_admins_production_assignments WHERE admin_id=${admin_id}`
+        );
+
+        return result;
+    }
+
+    async deleteExecutiveAdminProductionAssignment(exec_admin_production_assignment_id:number): Promise<any> {
+        //const data = user.toPersistence();
+
+         const [result] = await this.db.query<RowDataPacket[]>(
+            `DELETE FROM exec_admins_production_assignments WHERE exec_admin_production_assignment_id=${exec_admin_production_assignment_id}`
+        );
+
+        return result;
     }
 
 
