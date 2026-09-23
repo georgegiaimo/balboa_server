@@ -187,7 +187,7 @@ export class ApisService {
         var assignments = await this.apisRepository.getProductionAssignments();
         var usersx = await this.apisRepository.getUsers();
 
-        var users = usersx.filter((x:any) => { return x.production_email.indexOf(domain) > -1; });
+        var users = usersx.filter((x:any) => { return x.production_email ? (x.production_email.indexOf(domain) > -1):false; });
         var users_ids = users.map((x:any) => { return x.user_id; });
 
         var productions = [] as any[];
@@ -211,7 +211,7 @@ export class ApisService {
                 }
             }
         });
-
+        
         return {
             users: users,
             productions: productions
@@ -1149,7 +1149,69 @@ export class ApisService {
             }
         }
 
+        else if (added_user.password_reset_sendgrid_message_id == sg_message_id){
+            if (event.event == 'delivered'){
+                object = {
+                    added_user_id: added_user.added_user_id,
+                    password_reset_sendgrid_message_delivered: Date.now()
+                }
+            }
+            else if (event.event == 'open'){
+                object = {
+                    added_user_id: added_user.added_user_id,
+                    password_reset_sendgrid_message_opened: Date.now()
+                }
+            }
+            else if (event.event == 'click'){
+                object = {
+                    added_user_id: added_user.added_user_id,
+                    password_reset_sendgrid_message_clicked: Date.now()
+                }
+            }
+            else if (event.event == 'bounce'){
+                object = {
+                    added_user_id: added_user.added_user_id,
+                    password_reset_sendgrid_message_bounced: Date.now()
+                }
+            }
+        }
+
         if (object) await this.apisRepository.updateAddedUser(object);
+        else {
+            //email was not a recently added notification, 
+            var individual_messagesx = await this.apisRepository.getIndividualMessagesByEmail(event.email);
+            var individual_message = individual_messagesx.find((x:any) => { return x.sendgrid_message_id == sg_message_id; });
+
+            if (individual_message){
+                var objectx;
+                if (event.event == 'delivered'){
+                objectx = {
+                    individual_message_id: individual_message.individual_message_id,
+                    sendgrid_message_delivered: Date.now()
+                }
+            }
+            else if (event.event == 'open'){
+                objectx = {
+                    individual_message_id: individual_message.individual_message_id,
+                    sendgrid_message_opened: Date.now()
+                }
+            }
+            else if (event.event == 'click'){
+                objectx = {
+                    individual_message_id: individual_message.individual_message_id,
+                    sendgrid_message_clicked: Date.now()
+                }
+            }
+            else if (event.event == 'bounce'){
+                objectx= {
+                    individual_message_id: individual_message.individual_message_id,
+                    sendgrid_message_bounced: Date.now()
+                }
+            }
+
+            }
+        }
+
 
         }
         catch(err){
@@ -1244,6 +1306,22 @@ export class ApisService {
                 opened_date: x.reminder_two_sendgrid_message_opened ? this.commonService.getDate(x.reminder_two_sendgrid_message_opened):'',
                 clicked_date: x.reminder_two_sendgrid_message_clicked ? this.commonService.getDate(x.reminder_two_sendgrid_message_clicked):'',
                 bounced_date: x.reminder_two_sendgrid_message_bounced ? this.commonService.getDate(x.reminder_two_sendgrid_message_bounced):'',
+                org_unit_path: x.org_unit_path
+            });
+
+            if (x.password_reset_sendgrid_message_id) emails.push({
+                user_id: x.user_id,
+                name: x.first_name + ' ' + x.last_name,
+                personal_email: x.personal_email,
+                message: 'Password Reset',
+                delivered: x.password_reset_sendgrid_message_delivered ? true:false,
+                opened: x.password_reset_sendgrid_message_opened ? true:false,
+                clicked: x.password_reset_sendgrid_message_clicked ? true:false,
+                bounced: x.password_reset_sendgrid_message_bounced ? true:false,
+                delivered_date: x.password_reset_sendgrid_message_delivered ? this.commonService.getDate(x.password_reset_sendgrid_message_delivered):'',
+                opened_date: x.password_reset_sendgrid_message_opened ? this.commonService.getDate(x.password_reset_sendgrid_message_opened):'',
+                clicked_date: x.password_reset_sendgrid_message_clicked ? this.commonService.getDate(x.password_reset_sendgrid_message_clicked):'',
+                bounced_date: x.password_reset_sendgrid_message_bounced ? this.commonService.getDate(x.password_reset_sendgrid_message_bounced):'',
                 org_unit_path: x.org_unit_path
             });
         });
@@ -1375,7 +1453,132 @@ export class ApisService {
         return mailing;
     }
 
+    public async addMessagingGroup(object:any){
+        var messaging_group_id = await this.apisRepository.addMessagingGroup(object);
+        return messaging_group_id;
+    }
+
+    public async getMessagingGroups(admin_id:number){
+
+        //get messaging groups
+        var messaging_groups = await this.apisRepository.getMessagingGroups(admin_id);
+        return messaging_groups;
+    }
+
+    public async deleteMessagingGroup(object:any){
+        var messaging_group_id = await this.apisRepository.deleteMessagingGroup(object.messaging_group_id);
+        return messaging_group_id;
+    }
+
+    public async updateMessagingGroup(object:any){
+
+        var messaging_group_id = this.apisRepository.updateMessagingGroup(object);
+        return messaging_group_id;
+    }
+
+    public async getComposedMessages(admin_id:number){
+
+        //get messaging groups
+        var composed_messages = await this.apisRepository.getComposedMessagesByAdmin(admin_id);
+
+        composed_messages.forEach((x:any) => {
+            x.date = this.commonService.getDate(x.created_timestamp);
+            //x.recipients_ids = x.recipient_ids ? JSON.parse(x.recipient_ids):[];
+            if (x.recipients_ids){
+                var user_ids = JSON.parse(x.recipients_ids);
+                if (user_ids) x.number_recipients = user_ids.length;
+            }
+        })
+
+        return composed_messages;
+    }
+
+    public async getMessageDetails(message_id:number){
+
+        //get message details
+        var composed_messagex = await this.apisRepository.getComposedMessage(message_id);
+        var composed_message = composed_messagex[0];
+        composed_message.datex = this.commonService.getDate(composed_message.created_timestamp);
+        var individual_messages = await this.apisRepository.getIndividualMessagesFromComposeMessage(message_id);
+
+        individual_messages.forEach((x:any) => {
+            x.delivered = x.sendgrid_message_delivered ? true:false;
+            x.opened = x.sendgrid_message_opened ? true:false;
+            x.clicked = x.sendgrid_message_clicked ? true:false;
+            x.bounced = x.sendgrid_message_bounced ? true:false;
+        })
+
+        return {
+            composed_message: composed_message,
+            individual_messages: individual_messages
+        };
+    }
+
+
     public async temp(){
+
+        return;
+        console.log('@temp');
+
+        var users = await this.apisRepository.getUsers();
+        var assignments = await this.apisRepository.getProductionAssignments();
+        var productions = await this.apisRepository.getProductions();
+
+        console.log('users', users.length);
+        console.log('assignments', assignments.length);
+        console.log('productions', productions.length);
+
+        var str = '';
+
+        var all_assignments = [];
+        users.forEach((x:any) => {
+            //find assignments
+            var user_assignments = assignments.filter((n:any) => { return n.user_id == x.user_id; });
+            user_assignments = user_assignments.sort((a:any,b:any) => { return a.created_timestamp - b.created_timestamp;});
+
+            user_assignments.forEach((n:any) => {
+                var productionx = productions.find((m:any) => { return m.production_id == n.production_id});
+                if (productionx){
+                    n.production_name = productionx.name;
+                    str += `${x.first_name} ${x.last_name},${x.production_email},${n.production_name}, ${this.commonService.getDate(n.created_timestamp)}, ${this.commonService.getDate(n.ended_timestamp)} \n`;
+                    all_assignments.push(n);
+                }
+            });
+
+        });
+
+        console.log('all_assignments', all_assignments.length);
+        console.log('str', str);
+        /*
+        var str = '';
+        var ctr = 0;
+        users.forEach((x:any) => {
+            //find active assignments
+            var assignment = assignments.find((n:any) => { return n.user_id == x.user_id && n.status == 'active'});
+            if (assignment){
+                //console.log('assignment', assignment);
+                var production = productions.find((m:any) => { return m.production_id == assignment.production_id; });
+                if (production){
+                    //console.log('production',production);
+                    ctr += 1;
+
+                    var domain = '';
+                    if (x.production_email.indexOf('seriescrew') > -1) domain = 'seriescrew';
+                    else if (x.production_email.indexOf('crew-tv') > -1) domain = 'crew-tv';
+                    else if (x.production_email.indexOf('mount22prod') > -1) domain = 'mount22prod';
+
+                    if (domain == 'mount22prod') str += `${x.first_name} ${x.last_name},${x.production_email},${production.name} \n`;
+                    
+                }
+               
+            }
+        });
+
+        
+        console.log(str);
+        console.log('ctr', ctr);
+        */
+        /*
         console.log('@temp');
         
         var users = await this.apisRepository.getUsers();
@@ -1395,7 +1598,7 @@ export class ApisService {
                 //await this.apisRepository.deleteReportAction(item.report_action_id);
             }
         }
-
+        */
         /*
         for (let user of users){
             var assignmentsx = assignments.filter((x:any) => { return x.user_id == user.user_id});

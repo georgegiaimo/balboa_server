@@ -17,5 +17,7 @@ export class SystemRoute implements Routes {
     // We pass the function reference. Controller handles (req, res, next)
     this.router.get(`${this.path}/getConfiguration`, this.systemController.getConfiguration);
     this.router.post(`${this.path}/updateConfiguration`, this.systemController.updateConfiguration);
+    this.router.post(`${this.path}/sendCode2FA`, this.systemController.sendCode2FA);
+    this.router.post(`${this.path}/verifyCode2FA`, this.systemController.verifyCode2FA);
   }
 }

@@ -556,6 +556,13 @@ export class GoogleService {
                     }
                 }
 
+                //update production emai
+                var user_objectm = {
+                        user_id: record.user_id,
+                        production_email: user_gg.primaryEmail
+                }
+                await this.googleRepository.updateUser(user_objectm);
+
                 //check assignment
                 var assignments = await this.googleRepository.getUserAssignments(record.user_id);
                 
@@ -943,10 +950,10 @@ export class GoogleService {
 
         //get access token
         var access_token;
-        if (user_data.domain == 'crew-tv'){
+        if (user_data.domain == 'crew-tv' || user_data.domain == 'seriescrew'){
             access_token = await this.getAccessToken(keys, 'admin@crew-tv.com');
         }
-        else if (user_data.domain == 'mount22prod' || user_data.domain == 'seriescrew'){
+        else if (user_data.domain == 'mount22prod'){
             access_token = await this.getAccessToken(keys2, 'admin@mount22prod.com');
         }
         else return;
@@ -1056,10 +1063,10 @@ export class GoogleService {
 
     //get access token
         var access_token;
-        if (domain == 'crew-tv'){
+        if (domain == 'crew-tv' || domain == 'seriescrew'){
             access_token = await this.getAccessToken(keys, 'admin@crew-tv.com');
         }
-        else if (domain == 'mount22prod' || domain == 'seriescrew'){
+        else if (domain == 'mount22prod'){
             access_token = await this.getAccessToken(keys2, 'admin@mount22prod.com');
         }
         else return;
@@ -1110,10 +1117,10 @@ console.log('update user in google', user_data);
 
     //get access token
     var access_token;
-    if (domain == 'crew-tv') {
+    if (domain == 'crew-tv' || domain == 'seriescrew' ) {
         access_token = await this.getAccessToken(keys, 'admin@crew-tv.com');
     }
-    else if (domain == 'mount22prod' || domain == 'seriescrew') {
+    else if (domain == 'mount22prod') {
         access_token = await this.getAccessToken(keys2, 'admin@mount22prod.com');
     }
     else return;
@@ -1186,10 +1193,10 @@ public async getDomainUsageStats(
 
     //get access token
     var access_token;
-    if (domain == 'crew-tv') {
+    if (domain == 'crew-tv' || domain == 'seriescrew') {
         access_token = await this.getAccessToken(keys, 'admin@crew-tv.com');
     }
-    else if (domain == 'mount22prod' || domain == 'seriescrew') {
+    else if (domain == 'mount22prod') {
         access_token = await this.getAccessToken(keys2, 'admin@mount22prod.com');
     }
     else return;
@@ -1288,10 +1295,10 @@ public async createGoogleOrgUnit(
 
     //get access token
     var access_token;
-    if (data.domain == 'crew-tv') {
+    if (data.domain == 'crew-tv' || data.domain == 'seriescrew') {
         access_token = await this.getAccessToken(keys, 'admin@crew-tv.com');
     }
-    else if (data.domain == 'mount22prod' || data.domain == 'seriescrew') {
+    else if (data.domain == 'mount22prod') {
         access_token = await this.getAccessToken(keys2, 'admin@mount22prod.com');
     }
     else return;
@@ -1335,10 +1342,10 @@ public async createGoogleOrgUnit(
 
         //get access token
         var access_token;
-        if (data.domain == 'crew-tv') {
+        if (data.domain == 'crew-tv' || data.domain == 'seriescrew') {
             access_token = await this.getAccessToken(keys, 'admin@crew-tv.com');
         }
-        else if (data.domain == 'mount22prod' || data.domain == 'seriescrew') {
+        else if (data.domain == 'mount22prod') {
             access_token = await this.getAccessToken(keys2, 'admin@mount22prod.com');
         }
         else return;
@@ -1374,10 +1381,10 @@ public async createGoogleOrgUnit(
 
         //get access token
         var access_token;
-        if (data.domain == 'crew-tv') {
+        if (data.domain == 'crew-tv' || data.domain == 'seriescrew') {
             access_token = await this.getAccessToken(keys, 'admin@crew-tv.com');
         }
-        else if (data.domain == 'mount22prod' || data.domain == 'seriescrew') {
+        else if (data.domain == 'mount22prod') {
             access_token = await this.getAccessToken(keys2, 'admin@mount22prod.com');
         }
         else return;
@@ -1461,6 +1468,115 @@ public async createGoogleOrgUnit(
             });
 
     }
+
+    public async requestPasswordChange(email:string): Promise<void> {
+
+        //find user account with the personal email
+        var users = await this.googleRepository.getUsers();
+
+        var user = users.find((x:any) => { return x.personal_email == email});
+        
+        if (!user) throw new Error(`The provided email is not associated with any account.`);
+        await this.changeGoogleWorkspacePasswordById(user);
+
+    }
+
+    public async changeGoogleWorkspacePasswordById(user: any): Promise<any> {
+
+
+        //get access token
+        var domain;
+        if (user.production_email.indexOf('crew-tv') > -1) domain = 'crew-tv';
+        else if (user.production_email.indexOf('seriescrew') > -1) domain = 'seriescrew';
+        else if (user.production_email.indexOf('mount22prod') > -1) domain = 'mount22prod';
+
+        //get access token
+        var access_token;
+        if (domain == 'crew-tv' || domain == 'seriescrew') {
+            access_token = await this.getAccessToken(keys, 'admin@crew-tv.com');
+        }
+        else if (domain == 'mount22prod') {
+            access_token = await this.getAccessToken(keys2, 'admin@mount22prod.com');
+        }
+        else {
+            throw new Error('The provided email does not correspond to a valid domain.');
+        }
+
+        const userId = user.google_id.trim();
+
+        if (!userId) {
+            throw new Error('The Google account ID is required.');
+        }
+
+        var password = this.commonService.createPassword();
+
+        try {
+
+            await axios.patch(
+                `https://admin.googleapis.com/admin/directory/v1/users/${encodeURIComponent(userId)}`,
+                {
+                    password: password,
+                    changePasswordAtNextLogin: true
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${access_token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+
+            //get all added users, see if there is a record already, if not, create it
+            var added_usersx = await this.googleRepository.getAddedUserByEmail(user.personal_email);
+            var added_user = added_usersx[0];
+
+            var added_user_id:number;
+
+            //save new user in database
+            var object = {
+                first_name: user.first_name,
+                last_name: user.last_name,
+                production_email: user.production_email,
+                personal_email: user.personal_email, 
+                timestamp_created: Date.now(),
+                temporary_password: password,
+                org_unit_path: user.org_unit_path,
+                domain: domain
+            }
+
+            if (!added_user) {
+                added_user_id = await this.googleRepository.saveNewUser(object);
+            }
+            else {
+                added_user_id = added_user.added_user_id;
+            }
+
+
+            
+            var sendgrid_response = await this.sendgridService.passwordResetRequest(object);
+
+            var sendgrid_message_id = sendgrid_response.response[0].headers['x-message-id'];
+
+            //record sending of message, use email as identifier
+            await this.emailNotificationsService.saveEmailNotification({
+                personal_email: object.personal_email,
+                password_reset_timestamp: Date.now(),
+                password_reset_sendgrid_message_id: sendgrid_message_id
+            });
+
+            } 
+            catch (err: any) {
+
+            if (err.response) {
+                throw new Error(
+                    `Google API Error ${err.response.status}: ${JSON.stringify(err.response.data)}`
+                );
+            }
+
+            throw err;
+        }
+    }
+
 
 
 }

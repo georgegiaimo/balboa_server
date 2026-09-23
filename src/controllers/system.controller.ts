@@ -38,4 +38,41 @@ export class SystemController {
       next(error); // Pass to global error handler
     }
   };
+
+  public sendCode2FA = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      var contents = req.body;
+
+      console.log('contents', contents);
+      console.log('req.body',req.body);
+
+      // Controller handles basic validation
+      if (!contents.phone_number) return res.status(400).json({ message: 'Phone number is required' });
+
+      // Controller calls the service
+      const result = await this.systemService.sendCode2FA(contents);
+
+      // Controller sends the final response
+      res.status(200).json({ data: result, message: 'success' });
+    } catch (error) {
+      next(error); // Pass to global error handler
+    }
+  };
+
+  public verifyCode2FA = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      var contents = req.body;
+
+      // Controller handles basic validation
+      if (!contents.phone_number) return res.status(400).json({ message: 'Phone number is required' });
+
+      // Controller calls the service
+      const result = await this.systemService.verifyCode2FA(contents);
+
+      // Controller sends the final response
+      res.status(200).json({ data: result, message: 'success' });
+    } catch (error) {
+      next(error); // Pass to global error handler
+    }
+  };
 }

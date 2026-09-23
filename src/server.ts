@@ -10,6 +10,7 @@ import { SystemRoute } from '@routes/system.route';
 import { ReportsRoute } from '@routes/reports.route';
 import { ApisRoute } from '@routes/apis.route';
 import { DocsRoute } from '@routes/docs.route';
+import { MessagingRoute } from '@routes/messaging.route';
 import { Server } from 'socket.io';
 import { initSockets } from './sockets'; // Import your logic
 
@@ -26,6 +27,7 @@ import { EmailNotificationsService } from './services/email_notifications';
 import { ApisRepository } from './repositories/apis.repository';
 import { ApisService } from './services/apis.service';
 import { DocsService } from './services/docs.service';
+import { LogsRoute } from './routes/logs.route';
 
 //container.registerInstance(UsersRepository, new UsersRepository());
 
@@ -37,7 +39,9 @@ const routes = [
   container.resolve(ReportsRoute),
   container.resolve(ApisRoute),
   container.resolve(DocsRoute),
-  container.resolve(GoogleRoute)
+  container.resolve(GoogleRoute),
+  container.resolve(MessagingRoute),
+  container.resolve(LogsRoute)
 ];
 
 var commonService = new CommonService;

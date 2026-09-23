@@ -159,5 +159,23 @@ export class GoogleController {
         }
     };
 
+    public requestPasswordChange = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+
+            var personal_email = req.body.email;
+            
+            if (!personal_email) {
+                return res.status(400).json({ message: 'A personal email must be provided.' });
+            }
+            // Controller calls the service
+            const result = await this.googleService.requestPasswordChange(personal_email);
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
 
 }

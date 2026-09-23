@@ -127,6 +127,50 @@ export class SendGridService {
         return response;
     }
 
+    async passwordResetRequest(data: any) {
+
+        var mailObj = {
+            to: data.personal_email,
+            from: {
+                email: "admin@askbalboa.com",
+                name: "Balboa Support Team"
+            },
+            templateId: "d-27e87cf1def342668da2a3eac8efd593",
+            dynamic_template_data: {
+                name: data.first_name,
+                production_email: data.production_email,
+                password: data.temporary_password
+            }
+        }
+
+        var response = this.sendEmail(mailObj);
+        return response;
+    }
+
+    async sendComposedMessage(data:any){
+
+        var mailObj = {
+            to: data.recipient_email,
+            from: {
+                email: "admin@askbalboa.com",
+                name: data.admin_name + " via Balboa Communications"
+            },
+            subject: data.subject,
+            replyTo: {
+                email: data.admin_email,
+                name: data.admin_name
+            },
+            templateId: "d-e9fb13fe16d24617b4d47a9422d0f55a",
+            dynamic_template_data: {
+                message_html: data.message_html,
+                subject: data.subject
+            }
+        }
+
+        var response = this.sendEmail(mailObj);
+        return response;
+    }
+
 
     async sendEmail(msg: any) {
 

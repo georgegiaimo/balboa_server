@@ -68,5 +68,13 @@ export class ApisRoute implements Routes {
 
     this.router.post(`${this.path}/addExecutiveAdminProductionAssignment`, this.apisController.addExecutiveAdminProductionAssignment);
     this.router.post(`${this.path}/deleteExecutiveAdminProductionAssignment`, this.apisController.deleteExecutiveAdminProductionAssignment);
+    
+    this.router.post(`${this.path}/addMessagingGroup`, this.apisController.addMessagingGroup);
+    this.router.get(`${this.path}/getMessagingGroups`, this.apisController.getMessagingGroups);
+    this.router.post(`${this.path}/deleteMessagingGroup`, this.apisController.deleteMessagingGroup);
+    this.router.post(`${this.path}/updateMessagingGroup`, this.apisController.updateMessagingGroup);
+
+    this.router.get(`${this.path}/getComposedMessages`, this.apisController.getComposedMessages);
+    this.router.get(`${this.path}/getMessageDetails`, this.apisController.getMessageDetails);
   }
 }

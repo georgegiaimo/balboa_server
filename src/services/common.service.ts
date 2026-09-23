@@ -60,8 +60,8 @@ export class CommonService {
     getTodaysDateMinusThree(): string {
         const date = new Date();
 
-        // Subtract 3 days
-        date.setDate(date.getDate() - 3);
+        // Subtract 5 days
+        date.setDate(date.getDate() - 5);
 
         // Format to YYYY-MM-DD
         const year = date.getFullYear();
@@ -82,6 +82,18 @@ export class CommonService {
 
         if (isNaN(epoch)) return null;
         else return epoch;
+    }
+
+    getDateTime(epoch: number, locale: string = 'en-US'): string {
+        // Check if epoch is in seconds (10 digits) vs milliseconds (13 digits)
+        const timestamp = epoch < 1e11 ? epoch * 1000 : epoch;
+        const date = new Date(timestamp);
+
+        return new Intl.DateTimeFormat(locale, {
+            dateStyle: 'medium',
+            timeStyle: 'short',
+            timeZone: 'America/Los_Angeles', // Forces Pacific Time (PST/PDT)
+        }).format(date);
     }
 
 }

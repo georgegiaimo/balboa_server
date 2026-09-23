@@ -164,8 +164,6 @@ export class ApisController {
         try {
             const data = req.body;
 
-            console.log('#$@#$@#$', data);
-
             // Controller calls the service
             const result = await this.apisService.updateAdmin(data);
 
@@ -647,6 +645,94 @@ export class ApisController {
             var data = req.body; 
             // Controller calls the service
             const result = await this.apisService.deleteExecutiveAdminProductionAssignment(data);
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
+    public addMessagingGroup = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+
+            var data = req.body; 
+            // Controller calls the service
+            const result = await this.apisService.addMessagingGroup(data);
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
+    public getMessagingGroups = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+
+            var admin_id = Number(req.query.id);         
+
+            // Controller calls the service
+            const result = await this.apisService.getMessagingGroups(admin_id);
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
+    public deleteMessagingGroup = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+
+            var data = req.body; 
+            // Controller calls the service
+            const result = await this.apisService.deleteMessagingGroup(data);
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
+    
+    public updateMessagingGroup = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const data = req.body;
+
+            // Controller calls the service
+            const result = await this.apisService.updateMessagingGroup(data);
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
+    public getComposedMessages = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+
+            var admin_id = Number(req.query.id);         
+
+            // Controller calls the service
+            const result = await this.apisService.getComposedMessages(admin_id);
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
+    public getMessageDetails = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+
+            var message_id = Number(req.query.id);         
+
+            // Controller calls the service
+            const result = await this.apisService.getMessageDetails(message_id);
 
             // Controller sends the final response
             res.status(200).json({ data: result, message: 'success' });

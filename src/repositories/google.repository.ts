@@ -35,6 +35,7 @@ export interface IGoogleRepository {
     //save(user: User): Promise<User>;
     //update(id: string, user: User): Promise<User | undefined>;
     //delete(id: string): Promise<boolean>;
+    getAddedUserByEmail(email:string): Promise<any>;
 }
 
 @singleton()
@@ -272,6 +273,16 @@ export class GoogleRepository implements IGoogleRepository {
         const [result] = await this.db.query<RowDataPacket[]>(
             `UPDATE bulk_upload_runs SET ? WHERE bulk_upload_run_id = ${object.bulk_upload_run_id}`,
             [object]
+        );
+
+        return result;
+    }
+
+    async getAddedUserByEmail(email:string): Promise<any> {
+        //const data = user.toPersistence();
+
+        const [result] = await this.db.query<RowDataPacket[]>(
+            `SELECT * FROM added_users WHERE personal_email='${email}'`
         );
 
         return result;

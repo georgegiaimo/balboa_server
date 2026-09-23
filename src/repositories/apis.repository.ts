@@ -69,7 +69,19 @@ export interface IApisRepository {
     addExecutiveAdminProductionAssignment(production_assignment:any): Promise<any>;
     getExecutiveAdminProductionAssignments(admin_id:number): Promise<any>;
     deleteExecutiveAdminProductionAssignment(exec_admin_production_assignment_id:number): Promise<any>;
+    
+    addMessagingGroup(group:any): Promise<any>;
+    getMessagingGroups(admin_id:number): Promise<any>;
+    deleteMessagingGroup(messaging_group_id:number): Promise<any>;
+    updateMessagingGroup(group:any): Promise<any>;
 
+    addComposedMessage(object:any): Promise<any>;
+    addIndividualMessage(object:any): Promise<any>;
+    getIndividualMessagesByEmail(email:string): Promise<any>;
+
+    getComposedMessagesByAdmin(admin_id:number): Promise<any>;
+    getComposedMessage(message_id:number): Promise<any>;
+    getIndividualMessagesFromComposeMessage(message_id:number): Promise<any>;
 }
 
 @singleton()
@@ -587,6 +599,115 @@ export class ApisRepository implements IApisRepository {
         return result;
     }
 
+    async addMessagingGroup(object: any): Promise<any> {
+        //const data = user.toPersistence();
+         const [result] = await this.db.query<ResultSetHeader>(
+            `INSERT messaging_groups SET ?`,
+            [object]
+        );
 
+        const header = result as ResultSetHeader;
+        return header.affectedRows > 0 ? header.insertId : undefined;
+
+    }
+
+    async getMessagingGroups(admin_id:number): Promise<any> {
+        //const data = user.toPersistence();
+
+        const [result] = await this.db.query<RowDataPacket[]>(
+            `SELECT * FROM messaging_groups WHERE admin_id=${admin_id}`
+        );
+
+        return result;
+    }
+
+    async deleteMessagingGroup(messaging_group_id:number): Promise<any> {
+        //const data = user.toPersistence();
+
+         const [result] = await this.db.query<RowDataPacket[]>(
+            `DELETE FROM messaging_groups WHERE messaging_group_id=${messaging_group_id}`
+        );
+
+        return result;
+    }
+
+    async updateMessagingGroup(object:any): Promise<any> {
+        //const data = user.toPersistence();
+
+        const [result] = await this.db.query<RowDataPacket[]>(
+            `UPDATE messaging_groups SET ? WHERE messaging_group_id = ${object.messaging_group_id}`,
+            [object]
+        );
+
+        return result;
+    }
+
+    async addComposedMessage(object: any): Promise<any> {
+        //const data = user.toPersistence();
+         const [result] = await this.db.query<ResultSetHeader>(
+            `INSERT composed_messages SET ?`,
+            [object]
+        );
+
+        const header = result as ResultSetHeader;
+        return header.affectedRows > 0 ? header.insertId : undefined;
+
+    }
+
+    async addIndividualMessage(object: any): Promise<any> {
+        //const data = user.toPersistence();
+         const [result] = await this.db.query<ResultSetHeader>(
+            `INSERT individual_messages SET ?`,
+            [object]
+        );
+
+        const header = result as ResultSetHeader;
+        return header.affectedRows > 0 ? header.insertId : undefined;
+
+    }
+
+    async getIndividualMessagesByEmail(email:string): Promise<any> {
+        //const data = user.toPersistence();
+
+        const [result] = await this.db.query<RowDataPacket[]>(
+            `SELECT * FROM individual_messages WHERE recipient_email='${email}'`
+        );
+
+        return result;
+    }
+
+    async getComposedMessagesByAdmin(admin_id:number): Promise<any> {
+        //const data = user.toPersistence();
+
+        const [result] = await this.db.query<RowDataPacket[]>(
+            `SELECT * FROM composed_messages WHERE admin_id='${admin_id}'`
+        );
+
+        return result;
+    }
+
+    async getComposedMessage(message_id:number): Promise<any> {
+        //const data = user.toPersistence();
+
+        const [result] = await this.db.query<RowDataPacket[]>(
+            `SELECT * FROM composed_messages WHERE composed_message_id='${message_id}'`
+        );
+
+        return result;
+    }
+
+    async getIndividualMessagesFromComposeMessage(message_id:number): Promise<any> {
+        //const data = user.toPersistence();
+
+        const [result] = await this.db.query<RowDataPacket[]>(
+            `SELECT 
+            individual_messages.*, users.production_email, users.first_name, users.last_name 
+            FROM individual_messages 
+            LEFT JOIN users ON users.user_id=individual_messages.user_id
+            WHERE composed_message_id='${message_id}'`
+        );
+
+        return result;
+    }
 
 }
