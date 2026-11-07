@@ -27,9 +27,13 @@ export interface IApisRepository {
     getProductionActivity(production_id:number): Promise<any>;
 
     getUsers(): Promise<any>;
+    getIdentityClientsUsers(): Promise<any>;
     getUser(user_id:number): Promise<any>;
     updateUser(user:any): Promise<any>;
+    updateUserExtendedData(user:any): Promise<any>;
+    addUserExtendedData(user:any): Promise<any>;
     getUserDetails(user_id:number): Promise<any>;
+    getUserDetailsExtendedData(user_id:number): Promise<any>;
     getUserAssignments(user_id:number): Promise<any>;
     addUser(user:any): Promise<any>;
 
@@ -278,6 +282,16 @@ export class ApisRepository implements IApisRepository {
         return result;
     }
 
+    async getUserDetailsExtendedData(user_id:number): Promise<any> {
+        //const data = user.toPersistence();
+
+        const [result] = await this.db.query<RowDataPacket[]>(
+            `SELECT * FROM identity_clients_extended_data WHERE user_id=${user_id}`
+        );
+
+        return result;
+    }
+
     async getUserAssignments(user_id:number): Promise<any> {
         //const data = user.toPersistence();
 
@@ -304,6 +318,24 @@ export class ApisRepository implements IApisRepository {
         return result;
     }
 
+    async getIdentityClientsUsers(): Promise<any> {
+        //const data = user.toPersistence();
+
+        const [result] = await this.db.query<RowDataPacket[]>(
+            `SELECT users.*, identity_clients_extended_data.manager,
+            identity_clients_extended_data.has_microsoft_office,
+            identity_clients_extended_data.has_adobe,
+            identity_clients_extended_data.has_zoom_pro,
+            identity_clients_extended_data.has_slack,
+            identity_clients_extended_data.has_docusign,
+            identity_clients_extended_data.has_airtable
+            FROM users LEFT JOIN identity_clients_extended_data ON 
+            identity_clients_extended_data.user_id=users.user_id WHERE users.is_identity_client=1`
+        );
+
+        return result;
+    }
+
     async updateUser(object:any): Promise<any> {
         //const data = user.toPersistence();
 
@@ -313,6 +345,29 @@ export class ApisRepository implements IApisRepository {
         );
 
         return result;
+    }
+
+    async updateUserExtendedData(object:any): Promise<any> {
+        //const data = user.toPersistence();
+
+        const [result] = await this.db.query<RowDataPacket[]>(
+            `UPDATE identity_clients_extended_data SET ? WHERE extended_data_id = ${object.extended_data_id}`,
+            [object]
+        );
+
+        return result;
+    }
+
+    async addUserExtendedData(object: any): Promise<any> {
+        //const data = user.toPersistence();
+         const [result] = await this.db.query<ResultSetHeader>(
+            `INSERT identity_clients_extended_data SET ?`,
+            [object]
+        );
+
+        const header = result as ResultSetHeader;
+        return header.affectedRows > 0 ? header.insertId : undefined;
+
     }
 
     async getUser(user_id:number): Promise<any> {

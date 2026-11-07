@@ -758,21 +758,27 @@ export class DocsService {
         return final_html;
     }
 
-    public async uploadUsersFromCSV(filePath:string, run_id:number, type:string): Promise<any> {
+    public async uploadUsersFromCSV(filePath:string, run_id:number, type:string, org_unit:string|undefined): Promise<any> {
+
+      console.log('1111', type);
       
     var new_usersx = await this.getUsersInDocument(filePath) as any[];
-  
+
     //map CSV data
     var new_users = new_usersx.map((x:any) => {
       return {
         first_name: x['First Name [Required]'],
         last_name: x['Last Name [Required]'],
         personal_email: x['Email Address [Required]'],
-        org_unit_path: x['Org Unit Path [Required]']
+        phone_number: x['Phone Number'],
+        title: x['Title'],
+        department: x['Department'],
+        is_identity_client: x['Is Identity User'],
+        org_unit_path: org_unit ? org_unit: x['Org Unit Path [Required]']
       }
     });
 
-    //console.log('new_users', new_users);
+    console.log('new_users', new_users);
 
     //check that all productions exist
     var productions = await this.apisService.getProductions();
@@ -801,7 +807,7 @@ export class DocsService {
 
     });
 
-    //console.log('new_users', new_users);
+    console.log('new_users', new_users);
 
     //var users = await this.apisService.getUsers();
     
@@ -843,6 +849,7 @@ export class DocsService {
         for (let user of new_users) {
           //add user to google
           var google_response = await this.googleService.addUserToGoogle(user);
+          //await this.delay(5000);
           ctr += 1;
           this.apisService.updateBulkUploadRun(run_id, `Completing ${ctr} of ${new_users.length}...`);
         }
@@ -872,6 +879,9 @@ export class DocsService {
 
     return new_users.length;
   }
+
+  private delay = (ms: number): Promise<void> =>
+  new Promise(resolve => setTimeout(resolve, ms));
 
   public async getUsersInDocument(filePath:string){
     const new_users:any[] = [];

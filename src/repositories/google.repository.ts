@@ -17,6 +17,7 @@ export interface IGoogleRepository {
     getUserAssignments(id: number): Promise<any>;
     updateProductionAssignment(object: any): Promise<any>;
     addHistoricalData(object: any): Promise<any>;
+    addHistoricalDataFeatures(object: any): Promise<any>;
 
     getProductionAssignments(): Promise<any>;
     deleteProductionAssignment(id: number): Promise<any>;
@@ -174,6 +175,18 @@ export class GoogleRepository implements IGoogleRepository {
 
         const [result] = await this.db.query<ResultSetHeader>(
             `INSERT historical_data SET ?`,
+            [object]
+        );
+
+        const header = result as ResultSetHeader;
+        return header.affectedRows > 0 ? header.insertId : undefined;
+    }
+
+    async addHistoricalDataFeatures(object: any): Promise<any> {
+        //const data = user.toPersistence();
+
+        const [result] = await this.db.query<ResultSetHeader>(
+            `INSERT historical_data_features SET ?`,
             [object]
         );
 

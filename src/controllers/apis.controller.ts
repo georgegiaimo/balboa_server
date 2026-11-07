@@ -62,11 +62,38 @@ export class ApisController {
         }
     };
 
+    public getUserDetailsExtendedData = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+
+            var user_id = Number(req.query.id); 
+            // Controller calls the service
+            const result = await this.apisService.getUserDetailsExtendedData(user_id);
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
     public getUsers = async (req: Request, res: Response, next: NextFunction) => {
         try {
 
             // Controller calls the service
             const result = await this.apisService.getUsers();
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
+    public getIdentityClientsUsers = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+
+            // Controller calls the service
+            const result = await this.apisService.getIdentityClientsUsers();
 
             // Controller sends the final response
             res.status(200).json({ data: result, message: 'success' });
@@ -81,6 +108,34 @@ export class ApisController {
 
             // Controller calls the service
             const result = await this.apisService.updateUser(data);
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
+    public updateUserExtendedData = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const data = req.body;
+
+            // Controller calls the service
+            const result = await this.apisService.updateUserExtendedData(data);
+
+            // Controller sends the final response
+            res.status(200).json({ data: result, message: 'success' });
+        } catch (error) {
+            next(error); // Pass to global error handler
+        }
+    };
+
+    public addUserExtendedData = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const data = req.body;
+
+            // Controller calls the service
+            const result = await this.apisService.addUserExtendedData(data);
 
             // Controller sends the final response
             res.status(200).json({ data: result, message: 'success' });

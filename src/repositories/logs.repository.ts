@@ -30,7 +30,7 @@ export class LogsRepository implements ILogsRepository {
         const [result] = await this.db.query<RowDataPacket[]>(
             `SELECT user_logs.*, admins.* 
             FROM user_logs 
-            LEFT JOIN admins ON admins.admin_id=user_logs.admin_id`
+            LEFT JOIN admins ON admins.admin_id=user_logs.admin_id ORDER BY user_logs.timestamp DESC LIMIT 1000`
         );
 
         return result;

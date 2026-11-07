@@ -16,5 +16,6 @@ export class ReportsRoute implements Routes {
   private initializeRoutes() {
     // We pass the function reference. Controller handles (req, res, next)
     this.router.get(`${this.path}/getDashboardData`, this.reportsController.getDashboardData);
+    this.router.get(`${this.path}/getDashboardDataFeatures`, this.reportsController.getDashboardDataFeatures);
   }
 }

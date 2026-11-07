@@ -22,7 +22,7 @@ let ReportsService = class ReportsService {
         this.commonService = commonService;
     }
     async getDashboardData() {
-        console.log('get dashboard data');
+        //console.log('get dashboard data');
         var users = await this.reportsRepository.getUsers();
         var assignments = await this.reportsRepository.getProductionAssignments();
         var productions = await this.reportsRepository.getProductions();

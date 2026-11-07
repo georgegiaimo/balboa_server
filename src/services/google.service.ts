@@ -427,7 +427,8 @@ export class GoogleService {
                     google_org_unit_parent_id: org_unit.parentOrgUnitId,
                     name: org_unit.name,
                     org_unit_path: org_unit.orgUnitPath,
-                    domain: org_unit.domain
+                    domain: org_unit.domain,
+                    status: 'Active'
                 }
 
                 console.log('production does not exist in db, creating ...', org_unit.name);
@@ -640,9 +641,11 @@ export class GoogleService {
 
                 if (new_user_record) {
                     user_object.notes = new_user_record.notes;
-                    user_object.is_identity_client = new_user_record.is_identity_client
+                    user_object.is_identity_client = new_user_record.is_identity_client;
+                    user_object.title = new_user_record.title;
+                    user_object.department = new_user_record.department;
+                    user_object.phone_number = new_user_record.phone_number;
                 }
-
 
                 console.log('adding new user', user_object.first_name, user_object.last_name);
                 var user_id = await this.googleRepository.addUser(user_object);
@@ -728,6 +731,27 @@ export class GoogleService {
         }
 
         await this.googleRepository.addHistoricalData(historical_data_object);
+
+        //store historical data for features
+        var all_productions = await this.googleRepository.getProductions();
+        console.log('****** all productions *****', all_productions.length);
+        var production_assignments = await this.googleRepository.getProductionAssignments();
+        var feature_productions = all_productions.filter((x:any) => { return x.type == 'Feature' && x.status == 'Active'});
+        console.log('$$$$$ feature_productions.length', feature_productions.length)
+        var users_features = 0;
+        for (let x of feature_productions) {
+            //get active assignments for this production
+            var assignments_for_production = production_assignments.filter((n:any) => { return n.production_id == x.production_id && n.status.toLowerCase() == 'active' });
+            users_features += assignments_for_production.length;
+        }
+
+        var historical_data_object_features = {
+            users: users_features,
+            productions: feature_productions.length,
+            timestamp: Date.now()
+        }
+
+        await this.googleRepository.addHistoricalDataFeatures(historical_data_object_features);
         
         await this.deleteDuplicateAssignments();
         await this.deleteDuplicateReportActions();
@@ -1020,7 +1044,10 @@ export class GoogleService {
                 temporary_password: password,
                 org_unit_path: user_data.org_unit_path,
                 domain: user_data.domain,
-                notes: user_data.notes
+                notes: user_data.notes,
+                title: user_data.title,
+                department: user_data.department,
+                phone_number: user_data.phone_number
             }
 
             await this.googleRepository.saveNewUser(object);
@@ -1471,12 +1498,17 @@ public async createGoogleOrgUnit(
 
     public async requestPasswordChange(email:string): Promise<void> {
 
+        //console.log('requestPasswordChange', email);
+
         //find user account with the personal email
         var users = await this.googleRepository.getUsers();
 
         var user = users.find((x:any) => { return x.personal_email == email});
+
+        //console.log('user', user);
         
         if (!user) throw new Error(`The provided email is not associated with any account.`);
+        
         await this.changeGoogleWorkspacePasswordById(user);
 
     }
@@ -1511,7 +1543,7 @@ public async createGoogleOrgUnit(
         var password = this.commonService.createPassword();
 
         try {
-
+            
             await axios.patch(
                 `https://admin.googleapis.com/admin/directory/v1/users/${encodeURIComponent(userId)}`,
                 {

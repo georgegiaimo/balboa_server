@@ -9,6 +9,7 @@ export interface IReportsRepository {
     getProductions(): Promise<any>;
     getProductionAssignments(): Promise<any>;
     getHistoricalData(): Promise<any>;
+    getHistoricalDataFeatures(): Promise<any>;
     //addProduction(object: any): Promise<any>;
     //updateProduction(object: any): Promise<any>;
     //addProductionAssignment(object: any): Promise<any>;
@@ -68,6 +69,16 @@ export class ReportsRepository implements IReportsRepository {
 
         const [result] = await this.db.query<RowDataPacket[]>(
             `SELECT * FROM historical_data`
+        );
+
+        return result;
+    }
+
+    async getHistoricalDataFeatures(): Promise<any> {
+        //const data = user.toPersistence();
+
+        const [result] = await this.db.query<RowDataPacket[]>(
+            `SELECT * FROM historical_data_features`
         );
 
         return result;

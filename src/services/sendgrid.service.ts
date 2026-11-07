@@ -66,6 +66,9 @@ export class SendGridService {
 
     async accountCreatedNotification(data: any) {
 
+        const loginUrl = `https://accounts.google.com/AccountChooser?Email=${encodeURIComponent(data.production_email)}&continue=${encodeURIComponent('https://mail.google.com')}`
+        //`https://accounts.google.com/AccountChooser?Email=${encodeURIComponent(data.production_email)}&continue=https://mail.google.com`;
+
         var mailObj = {
             to: data.personal_email,
             from: {
@@ -77,7 +80,8 @@ export class SendGridService {
                 name: data.first_name,
                 production_email: data.production_email,
                 password: data.temporary_password,
-                production: data.org_unit_path.slice(1)
+                production: data.org_unit_path.slice(1),
+                login_url: loginUrl
             }
         }
 
@@ -86,6 +90,10 @@ export class SendGridService {
     }
 
     async accountCreatedReminder1(data: any) {
+
+        const loginUrl = `https://accounts.google.com/AccountChooser?Email=${encodeURIComponent(data.production_email)}&continue=${encodeURIComponent('https://mail.google.com')}`
+        //`https://accounts.google.com/AccountChooser?Email=${encodeURIComponent(data.production_email)}&continue=${encodeURIComponent('https://myaccount.google.com/security')}`;
+        //`https://accounts.google.com/AccountChooser?Email=${encodeURIComponent(data.production_email)}&continue=https://mail.google.com`;
 
         var mailObj = {
             to: data.personal_email,
@@ -98,7 +106,8 @@ export class SendGridService {
                 name: data.first_name,
                 production_email: data.production_email,
                 password: data.temporary_password,
-                production: data.org_unit_path.slice(1)
+                production: data.org_unit_path.slice(1),
+                login_url: loginUrl
             }
         }
 
@@ -107,6 +116,9 @@ export class SendGridService {
     }
 
     async accountCreatedReminder2(data: any) {
+
+        const loginUrl = `https://accounts.google.com/AccountChooser?Email=${encodeURIComponent(data.production_email)}&continue=${encodeURIComponent('https://mail.google.com')}`
+        //`https://accounts.google.com/AccountChooser?Email=${encodeURIComponent(data.production_email)}&continue=https://mail.google.com`;
 
         var mailObj = {
             to: data.personal_email,
@@ -119,7 +131,8 @@ export class SendGridService {
                 name: data.first_name,
                 production_email: data.production_email,
                 password: data.temporary_password,
-                production: data.org_unit_path.slice(1)
+                production: data.org_unit_path.slice(1),
+                login_url: loginUrl
             }
         }
 

@@ -142,6 +142,11 @@ export class ApisService {
 
     }
 
+    public async getUserDetailsExtendedData(user_id:number){
+        var userx = await this.apisRepository.getUserDetailsExtendedData(user_id);
+        return userx[0];
+    }
+
     
     public async getUsers(){
 
@@ -161,13 +166,15 @@ export class ApisService {
                 //get start and end dates
                 production.assignment_start_date = this.commonService.getDate(n.created_timestamp);
                 production.assignment_end_date = this.commonService.getDate(n.ended_timestamp);
+                production.production_assignment_id = n.production_assignment_id;
                 productionsx.push(production);
             });
 
-            user.productions = productionsx;
+            user.productions = JSON.parse(JSON.stringify(productionsx));
             user.last_login_date = this.commonService.getDate(user.last_login_time);
             user.creation_date = this.commonService.getDate(user.creation_time);
             user.usage_percentage = Math.round((user.total_used_mb/user.limit_mb)*100);
+
         });
 
         //console.log('users', users);
@@ -175,9 +182,56 @@ export class ApisService {
         return users;
     }
 
+    public async getIdentityClientsUsers(){
+
+        var identity_users = await this.apisRepository.getIdentityClientsUsers();
+        console.log('identity_users',identity_users);
+        var assignments = await this.apisRepository.getProductionAssignments();
+        var productions = await this.apisRepository.getProductions();
+
+        //check assignments for each user
+        identity_users.forEach((user:any) => {
+            var assignmentsx = assignments.filter((x:any) => { return x.user_id == user.user_id });
+            
+            var productionsx = [] as any[];
+            assignmentsx.forEach((n:any) => {
+                var production = productions.find((m:any) => { return m.production_id == n.production_id});
+                //if (!production) console.log('production', production, n);
+                production.assignment_status = n.status;
+                //get start and end dates
+                production.assignment_start_date = this.commonService.getDate(n.created_timestamp);
+                production.assignment_end_date = this.commonService.getDate(n.ended_timestamp);
+                production.production_assignment_id = n.production_assignment_id;
+                productionsx.push(production);
+            });
+
+            user.productions = JSON.parse(JSON.stringify(productionsx));
+            user.last_login_date = this.commonService.getDate(user.last_login_time);
+            user.creation_date = this.commonService.getDate(user.creation_time);
+            user.usage_percentage = Math.round((user.total_used_mb/user.limit_mb)*100);
+
+        });
+
+        //console.log('identity_users', identity_users);
+
+        return identity_users;
+    }
+
     public async updateUser(object:any){
 
         var user_id = await this.apisRepository.updateUser(object);
+        return user_id;
+    }
+
+    public async updateUserExtendedData(object:any){
+
+        var user_id = await this.apisRepository.updateUserExtendedData(object);
+        return user_id;
+    }
+
+    public async addUserExtendedData(object:any){
+
+        var user_id = await this.apisRepository.addUserExtendedData(object);
         return user_id;
     }
 
@@ -1274,7 +1328,11 @@ export class ApisService {
                 opened_date: x.notification_sendgrid_message_opened ? this.commonService.getDate(x.notification_sendgrid_message_opened):'',
                 clicked_date: x.notification_sendgrid_message_clicked ? this.commonService.getDate(x.notification_sendgrid_message_clicked):'',
                 bounced_date: x.notification_sendgrid_message_bounced ? this.commonService.getDate(x.notification_sendgrid_message_bounced):'',
-                org_unit_path: x.org_unit_path
+                org_unit_path: x.org_unit_path,
+                notification_sendgrid_message_delivered: x.notification_sendgrid_message_delivered,
+                notification_sendgrid_message_opened: x.notification_sendgrid_message_opened,
+                notification_sendgrid_message_clicked: x.notification_sendgrid_message_clicked,
+                notification_sendgrid_message_bounced: x.notification_sendgrid_message_bounced,
             });
 
             if(x.reminder_one_sendgrid_message_id) emails.push({
@@ -1290,7 +1348,11 @@ export class ApisService {
                 opened_date: x.reminder_one_sendgrid_message_opened ? this.commonService.getDate(x.reminder_one_sendgrid_message_opened):'',
                 clicked_date: x.reminder_one_sendgrid_message_clicked ? this.commonService.getDate(x.reminder_one_sendgrid_message_clicked):'',
                 bounced_date: x.reminder_one_sendgrid_message_bounced ? this.commonService.getDate(x.reminder_one_sendgrid_message_bounced):'',
-                org_unit_path: x.org_unit_path
+                org_unit_path: x.org_unit_path,
+                reminder_one_sendgrid_message_delivered: x.reminder_one_sendgrid_message_delivered,
+                reminder_one_sendgrid_message_opened: x.reminder_one_sendgrid_message_opened,
+                reminder_one_sendgrid_message_clicked: x.reminder_one_sendgrid_message_clicked,
+                reminder_one_sendgrid_message_bounced: x.reminder_one_sendgrid_message_bounced,
             });
 
             if(x.reminder_two_sendgrid_message_id) emails.push({
@@ -1306,7 +1368,11 @@ export class ApisService {
                 opened_date: x.reminder_two_sendgrid_message_opened ? this.commonService.getDate(x.reminder_two_sendgrid_message_opened):'',
                 clicked_date: x.reminder_two_sendgrid_message_clicked ? this.commonService.getDate(x.reminder_two_sendgrid_message_clicked):'',
                 bounced_date: x.reminder_two_sendgrid_message_bounced ? this.commonService.getDate(x.reminder_two_sendgrid_message_bounced):'',
-                org_unit_path: x.org_unit_path
+                org_unit_path: x.org_unit_path,
+                reminder_two_sendgrid_message_delivered: x.reminder_two_sendgrid_message_delivered,
+                reminder_two_sendgrid_message_opened: x.reminder_two_sendgrid_message_opened,
+                reminder_two_sendgrid_message_clicked: x.reminder_two_sendgrid_message_clicked,
+                reminder_two_sendgrid_message_bounced: x.reminder_two_sendgrid_message_bounced
             });
 
             if (x.password_reset_sendgrid_message_id) emails.push({
@@ -1322,10 +1388,38 @@ export class ApisService {
                 opened_date: x.password_reset_sendgrid_message_opened ? this.commonService.getDate(x.password_reset_sendgrid_message_opened):'',
                 clicked_date: x.password_reset_sendgrid_message_clicked ? this.commonService.getDate(x.password_reset_sendgrid_message_clicked):'',
                 bounced_date: x.password_reset_sendgrid_message_bounced ? this.commonService.getDate(x.password_reset_sendgrid_message_bounced):'',
-                org_unit_path: x.org_unit_path
+                org_unit_path: x.org_unit_path,
+                password_reset_sendgrid_message_delivered: x.password_reset_sendgrid_message_delivered,
+                password_reset_sendgrid_message_opened: x.password_reset_sendgrid_message_opened,
+                password_reset_sendgrid_message_clicked: x.password_reset_sendgrid_message_clicked,
+                password_reset_sendgrid_message_bounced: x.password_reset_sendgrid_message_bounced,
             });
         });
 
+        emails.forEach((n:any) => {
+            n.most_recent =  Math.max(
+            n.notification_sendgrid_message_delivered || 0,
+            n.notification_sendgrid_message_opened || 0,
+            n.notification_sendgrid_message_clicked || 0,
+            n.notification_sendgrid_message_bounced || 0,
+            n.reminder_one_sendgrid_message_delivered || 0,
+            n.reminder_one_sendgrid_message_opened || 0,
+            n.reminder_one_sendgrid_message_clicked || 0,
+            n.reminder_one_sendgrid_message_bounced || 0,
+            n.reminder_two_sendgrid_message_delivered || 0,
+            n.reminder_two_sendgrid_message_opened || 0,
+            n.reminder_two_sendgrid_message_clicked || 0,
+            n.reminder_two_sendgrid_message_bounced || 0,
+            n.password_reset_sendgrid_message_delivered || 0,
+            n.password_reset_sendgrid_message_opened || 0,
+            n.password_reset_sendgrid_message_clicked || 0,
+            n.password_reset_sendgrid_message_bounced || 0
+        );
+        })
+
+        emails = emails.sort((a, b) => { return b.most_recent - a.most_recent });
+
+        //console.log('aaa');
         return emails;
     }
 
